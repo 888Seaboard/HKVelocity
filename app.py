@@ -3,7 +3,7 @@ import logging
 import threading
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, abort, request, redirect, url_for
+from flask import Flask, render_template, abort, request, redirect, url_for, Response
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from playwright.sync_api import sync_playwright
@@ -28,9 +28,10 @@ TOPBAR_LINKS = [
 ]
 
 USERS = {
-    "admin": generate_password_hash(os.environ.get("APP_PASSWORD", "admin123"))
+    "toveythuang": generate_password_hash(os.environ.get("APP_PASSWORD", "HongKong852!"))
 }
 
+# --- LOCAL FALLBACK DATA (完整保留) ---
 LOCAL_FALLBACK_RACES = [
     {"id": 1, "title": "Sha Tin R1 - Class 5 - 1200m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1200, "horses": [1, 2], "class": "Class 5", "time": "18:45"},
     {"id": 2, "title": "Sha Tin R2 - Class 4 - 1400m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1400, "horses": [3, 4], "class": "Class 4", "time": "19:15"},
@@ -258,6 +259,71 @@ def fetch_external_page(url):
         logger.exception("Failed to fetch external page: %s", e)
         return {"ok": False, "title": "Fetch failed", "url": url, "body_text": "", "error": str(e)}
 
+# --- NEW: Playwright Proxy Logic ---
+
+def proxy_hkjc_content(url):
+    """ 使用 Playwright 抓取內容並修復路徑 """
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            )
+            page = context.new_page()
+            page.goto(url, timeout=60000, wait_until="networkidle")
+            content = page.content()
+            
+            # 修復相對路徑
+            base_url = "https://racing.hkjc.com"
+            content = content.replace('src="/', f'src="{base_url}/')
+            content = content.replace('href="/', f'href="{base_url}/')
+            content = content.replace('window.top === window.self', 'true')
+            
+            browser.close()
+            return content
+    except Exception as e:
+        logger.error(f"Playwright Proxy Error: {e}")
+        return f"<html><body><h3>無法加載網頁</h3><p>{str(e)}</p></body></html>"
+
+@app.route("/hkjc_proxy")
+@login_required
+def hkjc_proxy():
+    """ 代理路由 - 使用 requests 而不是 Playwright """
+    target_url = request.args.get("url", "").strip()
+    if not target_url:
+        return "Missing URL", 400
+    
+    # 只允許 HKJC 域名
+    if "hkjc.com" not in target_url:
+        return "Invalid URL - only HKJC allowed", 403
+    
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8',
+            'Referer': 'https://racing.hkjc.com/',
+        }
+        
+        response = requests.get(target_url, headers=headers, timeout=20)
+        response.raise_for_status()
+        
+        # 修復相對路徑
+        html_content = response.text
+        html_content = html_content.replace('src="/', 'src="https://racing.hkjc.com/')
+        html_content = html_content.replace('href="/', 'href="https://racing.hkjc.com/')
+        
+        resp = Response(html_content)
+        resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+        resp.headers.pop('X-Frame-Options', None)
+        return resp
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Proxy Error: {e}")
+        return f"<html><body><h3>無法加載網頁</h3><p>Error: {str(e)}</p></body></html>", 500
+
+# --- 原有路由與邏輯整合 ---
+
 def open_remote_chrome(url: str):
     try:
         with sync_playwright() as p:
@@ -409,6 +475,8 @@ def open_topbar_link():
         race_horses, race_trainers, summary, active_detail = build_race_detail(dummy_race, dummy_horses, dummy_trainers)
         race_for_template = dummy_race
 
+    # 新邏輯：除了背景開 chrome，前端 iframe 也用 proxy 開啟
+    proxy_url = url_for('hkjc_proxy', url=url)
     threading.Thread(target=open_remote_chrome, args=(url,), daemon=True).start()
 
     return render_template(
@@ -422,7 +490,7 @@ def open_topbar_link():
         topbar_links=TOPBAR_LINKS,
         left_panel=None,
         right_panel=fetched,
-        browser_url=url,
+        browser_url=proxy_url,
     )
 
 @app.route("/open-browser")
@@ -440,6 +508,8 @@ def open_browser():
         race_horses, race_trainers, summary, active_detail = build_race_detail(dummy_race, dummy_horses, dummy_trainers)
         race_for_template = dummy_race
 
+    # 使用 Proxy URL
+    proxy_url = url_for('hkjc_proxy', url=url)
     threading.Thread(target=open_remote_chrome, args=(url,), daemon=True).start()
 
     return render_template(
@@ -453,7 +523,7 @@ def open_browser():
         topbar_links=TOPBAR_LINKS,
         left_panel=None,
         right_panel=None,
-        browser_url=url,
+        browser_url=proxy_url,
     )
 
 @app.route("/horse/<int:horse_id>")
@@ -515,6 +585,11 @@ def trainer_detail(trainer_id):
         right_panel=None,
         browser_url="",
     )
+
+@app.route("/calculator")
+@login_required
+def calculator():
+    return render_template("calculator.html")
 
 @app.errorhandler(404)
 def page_not_found(e):

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="home-layout">
     <section class="home-left">
-        <div class="page-title">Race Overview</div>
+        <div class="page-title">賽事總覽</div>
 
         <div class="searchbar">
             <form method="get" action="{{ url_for('home') }}" class="searchbar">
@@ -28,12 +28,12 @@
             <table class="list-table">
                 <thead>
                     <tr>
-                        <th>Race</th>
-                        <th>Class</th>
-                        <th>Course</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Distance</th>
+                        <th>場次</th>
+                        <th>級別</th>
+                        <th>賽道</th>
+                        <th>日期</th>
+                        <th>時間</th>
+                        <th>距離</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -54,7 +54,7 @@
 
     <aside class="home-right">
         <div class="quad">
-            <div class="panel-title">Featured Horses</div>
+            <div class="panel-title">品題馬匹</div>
             <div class="detail-list">
                 {% for horse in featured_horses %}
                 <div class="detail-row">
@@ -68,7 +68,7 @@
         </div>
 
         <div class="quad">
-            <div class="panel-title">Track Notes</div>
+            <div class="panel-title">賽日備忘</div>
             <div class="detail-list">
                 {% for label, value in race_track_notes %}
                 <div class="detail-row">

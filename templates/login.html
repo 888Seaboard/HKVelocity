@@ -2,26 +2,19 @@
 {% block title %}Login - HKVelocity{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1 class="page-title">Login</h1>
-    <p class="muted">請登入後使用系統。</p>
+<div class="login-page">
+    <div class="login-card">
+        <h1>Login</h1>
 
-    {% if error %}
-        <div class="error">{{ error }}</div>
-    {% endif %}
+        {% if error %}
+            <div class="flash">{{ error }}</div>
+        {% endif %}
 
-    <form method="post" class="form-grid">
-        <div>
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" autocomplete="username" required>
-        </div>
-        <div>
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" autocomplete="current-password" required>
-        </div>
-        <div>
-            <button type="submit" class="btn btn-primary">Login</button>
-        </div>
-    </form>
+        <form method="post">
+            <input type="text" name="username" placeholder="Username" autocomplete="username" required>
+            <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+            <button type="submit" class="btn-link" style="width:100%;">Login</button>
+        </form>
+    </div>
 </div>
 {% endblock %}

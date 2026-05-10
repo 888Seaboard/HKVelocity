@@ -11,10 +11,20 @@
     --danger: #ff6b6b;
     --success: #3ddc97;
     --shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.14);
     --radius: 14px;
+    --transition: all 0.2s ease;
+    --gold-border: rgba(212, 175, 55, 0.16);
+    --gold-border-dark: rgba(212, 175, 55, 0.12);
+    --gold-border-light: rgba(212, 175, 55, 0.28);
+    --gold-border-lighter: rgba(212, 175, 55, 0.38);
+    --bg-light: rgba(255, 255, 255, 0.04);
+    --bg-lighter: rgba(255, 255, 255, 0.06);
 }
 
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
 
 html, body {
     min-height: 100%;
@@ -35,20 +45,22 @@ body {
 a {
     color: var(--gold);
     text-decoration: none;
-    transition: color 0.18s ease, text-shadow 0.18s ease, transform 0.18s ease;
+    transition: var(--transition);
+
+    &:hover {
+        color: var(--gold-bright);
+        text-decoration: underline;
+    }
 }
 
-a:hover {
-    color: var(--gold-bright);
-    text-decoration: underline;
-}
-
+/* ============= APP 佈局 ============= */
 .app-shell {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
+/* 頂部導航欄 */
 .topbar {
     display: flex;
     justify-content: space-between;
@@ -65,7 +77,7 @@ a:hover {
 
 .brand a {
     font-weight: 800;
-    font-size: 22px;
+    font-size: 30px;
     letter-spacing: 0.5px;
     line-height: 1;
     display: inline-flex;
@@ -73,7 +85,9 @@ a:hover {
     white-space: nowrap;
 }
 
-.brand-hk { color: #ffffff; }
+.brand-hk {
+    color: #ffffff;
+}
 
 .brand-velocity {
     color: var(--gold);
@@ -85,6 +99,29 @@ a:hover {
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+.btn-link {
+    padding: 8px 14px;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
+    color: var(--gold);
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 14px;
+
+    &:hover {
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+        border-color: rgba(212, 175, 55, 0.48);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
 }
 
 .user-badge {
@@ -104,6 +141,80 @@ a:hover {
     overflow: hidden;
 }
 
+/* ============= 通用 Panel 樣式 ============= */
+.panel-base {
+    padding: 14px;
+    background: linear-gradient(180deg, rgba(23, 27, 37, 0.98), rgba(18, 21, 29, 0.98));
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #f2f4f8;
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-section {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--gold-border-dark);
+
+    &:last-of-type {
+        border-bottom: none;
+    }
+
+    & h2 {
+        margin: 0 0 12px;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--gold-bright);
+    }
+}
+
+/* ============= 表單元素 ============= */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    & label {
+        color: var(--gold-bright);
+        font-weight: 700;
+        font-size: 14px;
+    }
+}
+
+.form-input {
+    padding: 10px 12px;
+    border: 1px solid var(--gold-border);
+    border-radius: 8px;
+    background: var(--bg-light);
+    color: var(--text);
+    font-size: 13px;
+    transition: var(--transition);
+
+    &:focus {
+        outline: none;
+        border-color: var(--gold-border-lighter);
+        background: var(--bg-lighter);
+    }
+
+    &::placeholder {
+        color: var(--muted);
+    }
+}
+
+/* ============= RACE 頁面 ============= */
 .fixed-four {
     height: calc(100vh - 76px);
     min-height: 0;
@@ -125,70 +236,25 @@ a:hover {
     gap: 12px;
     flex-wrap: wrap;
     padding: 10px 14px;
-    background: linear-gradient(180deg, rgba(23, 27, 37, 0.98), rgba(18, 21, 29, 0.98));
-    border: 1px solid rgba(212, 175, 55, 0.16);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-}
+    @extend .panel-base;
 
-.race-head-left,
-.race-head-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    &-left,
+    &-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
 }
 
 .info-item {
-    padding: 4px 9px;
-    border: 1px solid rgba(212, 175, 55, 0.16);
+    padding: 6px 12px;
+    border: 1px solid var(--gold-border);
     border-radius: 999px;
     color: #f2f4f8;
-    background: rgba(255, 255, 255, 0.03);
-    font-size: 13px;
-}
-
-.race-head-right .race-btn {
-    padding: 6px 10px;
-    min-width: 44px;
-}
-
-.quad-grid {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 12px;
-}
-
-.quad {
-    min-width: 0;
-    min-height: 0;
-    padding: 14px;
-    background: linear-gradient(180deg, rgba(23, 27, 37, 0.98), rgba(18, 21, 29, 0.98));
-    border: 1px solid rgba(212, 175, 55, 0.16);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.panel-title {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    color: #f2f4f8;
-    flex: 0 0 auto;
-}
-
-.button-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
-    flex: 0 0 auto;
+    background: var(--bg-light);
+    font-size: 16px;
+    font-weight: 600;
 }
 
 .race-btn {
@@ -198,17 +264,39 @@ a:hover {
     min-width: 44px;
     padding: 7px 10px;
     border-radius: 10px;
-    border: 1px solid rgba(212, 175, 55, 0.18);
-    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--gold-border);
+    background: var(--bg-light);
     color: var(--gold);
     font-weight: 800;
+    transition: var(--transition);
+
+    &:hover {
+        background: rgba(212, 175, 55, 0.12);
+    }
+
+    &.active {
+        background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+        color: #1b1403;
+        border-color: var(--gold);
+    }
 }
 
-.race-btn.active {
-    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-    color: #1b1403;
+.quad-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
 }
 
+.quad {
+    min-width: 0;
+    min-height: 0;
+    @extend .panel-base;
+}
+
+/* ============= 表格 ============= */
 .table-wrap {
     overflow: auto;
     min-height: 0;
@@ -216,28 +304,37 @@ a:hover {
     border: 1px solid rgba(42, 50, 66, 0.95);
 }
 
-.race-table {
+.table-base {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
+
+    & th,
+    & td {
+        padding: 11px 14px;
+        border-bottom: 1px solid rgba(42, 50, 66, 0.95);
+        vertical-align: top;
+    }
+
+    & th {
+        background: rgba(255, 255, 255, 0.03);
+        text-align: left;
+        color: #d8deea;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    & tr:hover td {
+        background: rgba(212, 175, 55, 0.04);
+    }
 }
 
-.race-table th,
-.race-table td {
-    padding: 11px 14px;
-    border-bottom: 1px solid rgba(42, 50, 66, 0.95);
-    vertical-align: top;
+.race-table {
+    @extend .table-base;
 }
 
-.race-table th {
-    background: rgba(255, 255, 255, 0.03);
-    text-align: left;
-    color: #d8deea;
-    font-size: 14px;
-}
-
-.race-table tr:hover td {
-    background: rgba(212, 175, 55, 0.04);
+.list-table {
+    @extend .table-base;
 }
 
 .wrap {
@@ -245,6 +342,7 @@ a:hover {
     word-break: break-word;
 }
 
+/* ============= 詳情列表 ============= */
 .detail-list {
     display: grid;
     gap: 10px;
@@ -260,28 +358,37 @@ a:hover {
     gap: 12px;
     padding: 12px 14px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
-    border: 1px solid rgba(212, 175, 55, 0.16);
+    border: 1px solid var(--gold-border);
     border-radius: 12px;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.03),
-        0 4px 12px rgba(0, 0, 0, 0.14);
-}
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), var(--shadow-sm);
+    transition: var(--transition);
 
-.detail-row span {
-    color: var(--gold-bright);
-    font-weight: 700;
-    min-width: 92px;
-}
+    &:hover {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+        border-color: var(--gold-border-light);
+    }
 
-.detail-row > div {
-    color: var(--text);
-    text-align: right;
-    word-break: break-word;
+    & span {
+        color: var(--gold-bright);
+        font-weight: 700;
+        min-width: 92px;
+    }
+
+    & > div {
+        color: var(--text);
+        text-align: right;
+        word-break: break-word;
+    }
 }
 
 .detail-empty {
     color: var(--muted);
     padding: 6px 2px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
 }
 
 .external-view {
@@ -312,13 +419,15 @@ a:hover {
     white-space: pre-wrap;
     word-break: break-word;
     color: var(--text);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-light);
     border: 1px solid rgba(42, 50, 66, 0.95);
     border-radius: 12px;
     padding: 12px;
     overflow: auto;
+    font-size: 13px;
 }
 
+/* ============= HOME 頁面 ============= */
 .home-layout {
     display: grid;
     grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
@@ -336,10 +445,17 @@ a:hover {
 .home-right {
     display: grid;
     gap: 16px;
+
+    & .quad {
+        min-height: 0;
+    }
 }
 
-.home-right .quad {
-    min-height: 0;
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #f2f4f8;
 }
 
 .searchbar {
@@ -347,45 +463,87 @@ a:hover {
     gap: 10px;
     flex-wrap: wrap;
     margin-bottom: 12px;
+    flex: 0 0 auto;
+
+    & input,
+    & select,
+    & button {
+        background: var(--bg-light);
+        color: var(--text);
+        border: 1px solid var(--gold-border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 13px;
+        transition: var(--transition);
+    }
+
+    & input:focus,
+    & select:focus {
+        outline: none;
+        border-color: var(--gold-border-lighter);
+        background: var(--bg-lighter);
+    }
+
+    & button {
+        cursor: pointer;
+        background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
+        font-weight: 700;
+
+        &:hover {
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+        }
+    }
 }
 
-.searchbar input,
-.searchbar select,
-.searchbar button {
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text);
-    border: 1px solid rgba(212, 175, 55, 0.16);
-    border-radius: 10px;
-    padding: 10px 12px;
+/* ============= 登入頁面 ============= */
+.login-page {
+    min-height: calc(100vh - 76px);
+    display: grid;
+    place-items: center;
 }
 
-.searchbar button {
-    cursor: pointer;
-    background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
-}
+.login-card {
+    width: min(420px, 92vw);
+    padding: 22px;
+    border-radius: 18px;
+    background: rgba(23, 27, 37, 0.98);
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    box-shadow: var(--shadow);
 
-.list-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
+    & h1 {
+        margin: 0 0 16px;
+        color: #fff;
+        font-size: 24px;
+    }
 
-.list-table th,
-.list-table td {
-    padding: 11px 14px;
-    border-bottom: 1px solid rgba(42, 50, 66, 0.95);
-    vertical-align: top;
-}
+    & input,
+    & button {
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--gold-border);
+        background: var(--bg-light);
+        color: var(--text);
+        font-size: 14px;
+        transition: var(--transition);
+    }
 
-.list-table th {
-    background: rgba(255, 255, 255, 0.03);
-    text-align: left;
-    color: #d8deea;
-    font-size: 14px;
-}
+    & input:focus {
+        outline: none;
+        border-color: var(--gold-border-lighter);
+        background: var(--bg-lighter);
+    }
 
-.list-table tr:hover td {
-    background: rgba(212, 175, 55, 0.04);
+    & button {
+        background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
+        font-weight: 700;
+        cursor: pointer;
+
+        &:hover {
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+        }
+    }
 }
 
 .flash-wrap {
@@ -400,30 +558,297 @@ a:hover {
     color: var(--text);
 }
 
-.login-page {
+/* ============= 計算器頁面 ============= */
+.calculator-page {
     min-height: calc(100vh - 76px);
+    padding: 20px;
+    background: linear-gradient(180deg, rgba(15, 17, 21, 0.98), rgba(11, 13, 18, 0.98));
+}
+
+.calc-header {
+    margin-bottom: 24px;
+    text-align: center;
+
+    & h1 {
+        margin: 0;
+        font-size: 32px;
+        color: #f2f4f8;
+        text-shadow: 0 0 16px rgba(212, 175, 55, 0.2);
+    }
+}
+
+.calc-main-layout {
     display: grid;
-    place-items: center;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
-.login-card {
-    width: min(420px, 92vw);
-    padding: 22px;
-    border-radius: 18px;
-    background: rgba(23, 27, 37, 0.98);
-    border: 1px solid rgba(212, 175, 55, 0.18);
-    box-shadow: var(--shadow);
+.calc-input-panel,
+.calc-results-panel {
+    padding: 20px;
+    @extend .panel-base;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
 }
 
-.login-card h1 {
-    margin: 0 0 16px;
-    color: #fff;
+.calc-input-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.login-card input,
-.login-card button {
-    width: 100%;
-    margin-bottom: 10px;
+.calc-input-group {
+    margin-bottom: 12px;
+
+    & label {
+        display: block;
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    & select,
+    & input {
+        width: 100%;
+        @extend .form-input;
+    }
+}
+
+.calc-btn {
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(247, 224, 138, 1), rgba(212, 175, 55, 1));
+    color: #1b1403;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 8px;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(212, 175, 55, 0.3);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+/* 賠率輸入 */
+.race-input-group {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+
+    & label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--gold);
+        margin: 0;
+    }
+}
+
+.race-odds-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.race-odds {
+    padding: 8px 10px;
+    border: 1px solid var(--gold-border);
+    border-radius: 6px;
+    background: var(--bg-light);
+    color: var(--text);
+    font-size: 12px;
+    transition: var(--transition);
+
+    &::placeholder {
+        color: var(--muted);
+        font-size: 11px;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--gold-border-lighter);
+        background: var(--bg-lighter);
+    }
+}
+
+/* 計算器結果 */
+.calc-results-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.results-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--gold-border-dark);
+    border-radius: 10px;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &.highlight .summary-value {
+        color: #f7e08a;
+        text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    }
+}
+
+.summary-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.results-table-wrapper h3 {
+    margin: 0 0 12px;
+    color: var(--gold-bright);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 8px;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: rgba(212, 175, 55, 0.08);
+        border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(212, 175, 55, 0.3);
+        border-radius: 3px;
+
+        &:hover {
+            background: rgba(212, 175, 55, 0.5);
+        }
+    }
+}
+
+.combo-result-item {
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--gold-border);
+    border-radius: 8px;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12px;
+
+    &:hover {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+        border-color: var(--gold-border-light);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15);
+        transform: translateY(-2px);
+    }
+}
+
+.item-header {
+    font-weight: 700;
+    color: var(--gold);
+    font-size: 11px;
+}
+
+.item-combo {
+    color: var(--text);
+    word-break: break-word;
+    line-height: 1.4;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 6px 8px;
+    border-radius: 4px;
+    border-left: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.item-odds {
+    color: var(--muted);
+
+    & strong {
+        color: var(--gold-bright);
+    }
+}
+
+.item-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-top: 1px solid var(--gold-border-dark);
+    padding-top: 8px;
+}
+
+.item-return {
+    color: var(--success);
+
+    & strong {
+        color: #3ddc97;
+    }
+}
+
+.item-profit {
+    color: var(--muted);
+
+    & strong {
+        color: #f7e08a;
+    }
+}
+
+/* ============= 響應式設計 ============= */
+@media (max-width: 1200px) {
+    .calc-main-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .calc-input-panel {
+        position: static;
+    }
+
+    .results-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    .quad-grid {
+        gap: 10px;
+    }
+
+    .quad {
+        padding: 12px;
+    }
 }
 
 @media (max-width: 960px) {
@@ -445,61 +870,192 @@ a:hover {
     .main-content {
         overflow: visible;
     }
+
+    .race-page {
+        gap: 10px;
+    }
 }
 
-.browser-toolbar {
+@media (max-width: 768px) {
+    .race-odds-inputs {
+        grid-template-columns: 1fr;
+    }
+
+    .results-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .results-grid {
+        grid-template-columns: 1fr;
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 640px) {
+    .calculator-page {
+        padding: 12px;
+    }
+
+    .calc-header h1 {
+        font-size: 24px;
+    }
+
+    .race-header {
+        flex-direction: column;
+        align-items: flex-start;
+
+        &-left,
+        &-right {
+            width: 100%;
+        }
+    }
+
+    .panel-title {
+        font-size: 16px;
+    }
+
+    .searchbar {
+        flex-direction: column;
+
+        & input,
+        & select,
+        & button {
+            width: 100%;
+        }
+    }
+
+    .home-layout {
+        grid-template-columns: 1fr;
+    }
+}
+/* 組合結果表格 */
+.results-table-wrapper {
+    margin-top: 20px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-    flex: 0 0 auto;
-}
-
-.browser-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--gold-bright);
-}
-
-.browser-actions a {
-    color: var(--gold);
-    font-size: 13px;
-}
-
-.browser-frame {
-    width: 100%;
-    flex: 1 1 auto;
+    flex-direction: column;
     min-height: 0;
-    border: 1px solid rgba(42, 50, 66, 0.95);
-    border-radius: 12px;
-    background: #000;
-}
-.browser-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-    flex: 0 0 auto;
 }
 
-.browser-title {
-    font-size: 16px;
-    font-weight: 700;
+.results-table-wrapper h3 {
+    margin: 0 0 12px;
     color: var(--gold-bright);
+    font-size: 14px;
+    font-weight: 700;
 }
 
-.browser-actions a {
-    color: var(--gold);
-    font-size: 13px;
-}
-
-.browser-frame {
+.combo-results-table {
     width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
-    border: 1px solid rgba(42, 50, 66, 0.95);
-    border-radius: 12px;
-    background: #000;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--gold-border);
+    border-radius: 8px;
+    overflow: hidden;
+    flex: 1;
+    max-height: 600px;
+}
+
+.combo-results-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.combo-results-table th {
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.12), rgba(212, 175, 55, 0.06));
+    color: var(--gold-bright);
+    font-weight: 700;
+    font-size: 12px;
+    text-align: center;
+    border-bottom: 2px solid var(--gold-border-light);
+}
+
+.combo-results-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--gold-border-dark);
+    font-size: 12px;
+    color: var(--text);
+    text-align: center;
+}
+
+.combo-results-table tbody {
+    display: block;
+    width: 100%;
+    overflow-y: auto;
+    max-height: 500px;
+}
+
+.combo-results-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.combo-results-table tbody tr:hover {
+    background: rgba(212, 175, 55, 0.08);
+}
+
+.combo-results-table tbody tr:hover td {
+    background: rgba(212, 175, 55, 0.08);
+}
+
+.combo-number {
+    color: var(--gold);
+    font-weight: 700;
+    width: 50px !important;
+}
+
+.combo-result {
+    color: var(--text);
+    text-align: left;
+    flex: 1;
+    word-break: break-word;
+}
+
+.combo-odds {
+    color: var(--gold-bright);
+    font-weight: 700;
+}
+
+.combo-bet {
+    color: var(--muted);
+}
+
+.combo-return {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.combo-profit {
+    font-weight: 700;
+}
+
+/* 表格固定頭部滾動 */
+.combo-results-table::-webkit-scrollbar {
+    width: 6px;
+}
+
+.combo-results-table::-webkit-scrollbar-track {
+    background: rgba(212, 175, 55, 0.08);
+}
+
+.combo-results-table::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.3);
+    border-radius: 3px;
+}
+
+.combo-results-table::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.5);
+}
+
+@media (max-width: 768px) {
+    .combo-results-table th,
+    .combo-results-table td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+
+    .combo-results-table tbody {
+        max-height: 400px;
+    }
 }
