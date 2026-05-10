@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Login - HKVelocity{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+    <div class="login-card">
+        <div class="login-title">HKVelocity Login</div>
+        <div class="login-subtitle">請先登入先可以睇到賽馬資料</div>
+
+        {% if error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" class="login-form">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="admin" autocomplete="username" required>
+
+            <label>Password</label>
+            <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+
+            <button type="submit" class="btn-primary">Login</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

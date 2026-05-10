@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Race Detail - HKVelocity{% endblock %}
+
+{% block content %}
+<div class="race-page">
+    <div class="race-header">
+        <div class="race-head-left">
+            <span class="info-item">Race {{ summary.race_no if summary else '-' }}</span>
+            <span class="info-item">{{ summary.class if summary else '' }}</span>
+            <span class="info-item">{{ summary.course if summary else '' }}</span>
+            <span class="info-item">{{ summary.date if summary else '' }}</span>
+            <span class="info-item">{{ summary.time if summary else '' }}</span>
+        </div>
+
+        <div class="race-head-right">
+            <a href="{{ url_for('home') }}">Home</a>
+            {% for n in range(1, 12) %}
+                <a href="{{ url_for('race_detail', race_id=n) }}">R{{ n }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="race-grid">
+        <section class="quad">
+            <div class="panel-title">Race Card</div>
+            <table class="race-table">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Horse</th>
+                        <th>Trainer</th>
+                        <th>D</th>
+                        <th>Wt</th>
+                        <th>Rt</th>
+                        <th>Frm</th>
+                        <th>HKJC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in race_horses %}
+                    <tr>
+                        <td>{{ h.id }}</td>
+                        <td><a href="{{ url_for('horse_detail', horse_id=h.id) }}">{{ h.name }}</a></td>
+                        <td><a href="{{ url_for('trainer_detail', trainer_id=h.trainer_id) }}">{{ h.trainer }}</a></td>
+                        <td>{{ h.draw }}</td>
+                        <td>{{ h.weight }}</td>
+                        <td>{{ h.rating }}</td>
+                        <td>{{ h.form }}</td>
+                        <td><a href="{{ h.official_link }}" target="_blank">Open</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="quad">
+            <div class="panel-title">Summary</div>
+            <div class="info-list">
+                <div><span>Course</span><strong>{{ summary.course if summary else '' }}</strong></div>
+                <div><span>Distance</span><strong>{{ summary.distance if summary else '' }}</strong></div>
+                <div><span>Horses</span><strong>{{ summary.horse_count if summary else '' }}</strong></div>
+                <div><span>Trainers</span><strong>{{ summary.trainer_count if summary else '' }}</strong></div>
+            </div>
+        </section>
+
+        <section class="quad">
+            <div class="panel-title">Race Snaps</div>
+            <div class="snap-grid">
+                {% for h in race_horses %}
+                <div class="snap">
+                    <div class="snap-no">{{ h.id }}</div>
+                    <div class="snap-name">{{ h.name }}</div>
+                    <div class="snap-meta">D{{ h.draw }} W{{ h.weight }} R{{ h.rating }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="quad detail-quad">
+            <div class="panel-title">Detail Panel</div>
+            {% if active_detail %}
+            <div class="detail-panel">
+                <div class="detail-title">{{ active_detail["title"] }}</div>
+                <div class="detail-list">
+                    {% for label, value in active_detail["items"] %}
+                    <div class="detail-row">
+                        <span>{{ label }}</span>
+                        <strong>{{ value }}</strong>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="detail-empty">No detail selected.</div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}
