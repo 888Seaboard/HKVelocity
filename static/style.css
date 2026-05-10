@@ -446,3 +446,60 @@ a:hover {
         overflow: visible;
     }
 }
+
+.browser-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex: 0 0 auto;
+}
+
+.browser-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold-bright);
+}
+
+.browser-actions a {
+    color: var(--gold);
+    font-size: 13px;
+}
+
+.browser-frame {
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    border: 1px solid rgba(42, 50, 66, 0.95);
+    border-radius: 12px;
+    background: #000;
+}
+.browser-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex: 0 0 auto;
+}
+
+.browser-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold-bright);
+}
+
+.browser-actions a {
+    color: var(--gold);
+    font-size: 13px;
+}
+
+.browser-frame {
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    border: 1px solid rgba(42, 50, 66, 0.95);
+    border-radius: 12px;
+    background: #000;
+}

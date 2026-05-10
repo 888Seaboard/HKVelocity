@@ -1,21 +1,29 @@
 services:
-  app:
-    build: .
-    container_name: hk_race_app
+  chrome:
+    build:
+      context: .
+      dockerfile: Dockerfile.chrome
+    container_name: hkmindex-chrome
+    ports:
+      - "5900:5900"
+      - "6080:6080"
+      - "9222:9222"
+    shm_size: "2gb"
     restart: unless-stopped
     environment:
-      SECRET_KEY: "replace-with-a-strong-secret"
-      APP_PASSWORD: "replace-with-a-strong-password"
-    expose:
-      - "8000"
+      - VNC_PASSWORD=123456
 
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: hk_race_nginx
-    restart: unless-stopped
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: hkmindex-app
     ports:
-      - "8080:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=change-me-please
+      - APP_PASSWORD=admin123
+      - CHROME_CDP_URL=http://chrome:9222
     depends_on:
-      - app
+      - chrome
+    restart: unless-stopped

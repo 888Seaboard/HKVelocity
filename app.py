@@ -1,22 +1,15 @@
 import os
 import logging
-
+import threading
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, render_template, abort, request, redirect, url_for
-from flask_login import (
-    LoginManager,
-    UserMixin,
-    login_user,
-    login_required,
-    logout_user,
-    current_user,
-)
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from playwright.sync_api import sync_playwright
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-me-please")
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -25,6 +18,7 @@ login_manager.login_view = "login"
 login_manager.init_app(app)
 
 BASE_RACECARD_URL = "https://racing.hkjc.com/en-us/local/information/racecard"
+CHROME_CDP_URL = os.environ.get("CHROME_CDP_URL", "http://chrome:9222")
 
 TOPBAR_LINKS = [
     {"label": "賽期表", "url": "https://racing.hkjc.com/zh-hk/local/information/fixture", "desc": "查看賽期安排"},
@@ -52,50 +46,10 @@ LOCAL_FALLBACK_RACES = [
 ]
 
 LOCAL_FALLBACK_HORSES = {
-    1: {
-        "id": 1,
-        "name": "嘉應高昇",
-        "trainer": "大衛希斯",
-        "trainer_id": "david_hayes",
-        "draw": "1",
-        "weight": "126",
-        "rating": "140",
-        "form": "1-1-1",
-        "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2023_J062",
-    },
-    2: {
-        "id": 2,
-        "name": "浪漫勇士",
-        "trainer": "沈集成",
-        "trainer_id": "danny_shum",
-        "draw": "2",
-        "weight": "128",
-        "rating": "135",
-        "form": "1-2-1",
-        "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2020_E486",
-    },
-    3: {
-        "id": 3,
-        "name": "燈胆將軍",
-        "trainer": "黎昭昇",
-        "trainer_id": "richard_lee",
-        "draw": "3",
-        "weight": "121",
-        "rating": "92",
-        "form": "2-3-1",
-        "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2024_K218",
-    },
-    4: {
-        "id": 4,
-        "name": "美麗星晨",
-        "trainer": "告東尼",
-        "trainer_id": "tony_cruz",
-        "draw": "4",
-        "weight": "120",
-        "rating": "88",
-        "form": "4-2-2",
-        "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2024_K491",
-    },
+    1: {"id": 1, "name": "嘉應高昇", "trainer": "大衛希斯", "trainer_id": "david_hayes", "draw": "1", "weight": "126", "rating": "140", "form": "1-1-1", "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2023_J062"},
+    2: {"id": 2, "name": "浪漫勇士", "trainer": "沈集成", "trainer_id": "danny_shum", "draw": "2", "weight": "128", "rating": "135", "form": "1-2-1", "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2020_E486"},
+    3: {"id": 3, "name": "燈胆將軍", "trainer": "黎昭昇", "trainer_id": "richard_lee", "draw": "3", "weight": "121", "rating": "92", "form": "2-3-1", "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2024_K218"},
+    4: {"id": 4, "name": "美麗星晨", "trainer": "告東尼", "trainer_id": "tony_cruz", "draw": "4", "weight": "120", "rating": "88", "form": "4-2-2", "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2024_K491"},
 }
 
 LOCAL_FALLBACK_TRAINERS = {
@@ -105,33 +59,19 @@ LOCAL_FALLBACK_TRAINERS = {
     "tony_cruz": {"name": "告東尼", "horses": [4]},
 }
 
-
 class User(UserMixin):
     def __init__(self, username):
         self.id = username
 
-
 @login_manager.user_loader
 def load_user(user_id):
-    if user_id in USERS:
-        return User(user_id)
-    return None
-
+    return User(user_id) if user_id in USERS else None
 
 def slugify_trainer(name):
     return name.replace(" ", "_").replace(".", "_").replace("/", "_").replace("-", "_").strip("_")
 
-
 def make_dummy_race(race_id):
-    if race_id % 4 == 1:
-        horse_ids = [1, 2]
-    elif race_id % 4 == 2:
-        horse_ids = [2, 3]
-    elif race_id % 4 == 3:
-        horse_ids = [3, 4]
-    else:
-        horse_ids = [1, 4]
-
+    horse_ids = [1, 2] if race_id % 4 == 1 else [2, 3] if race_id % 4 == 2 else [3, 4] if race_id % 4 == 3 else [1, 4]
     race = {
         "id": race_id,
         "title": f"Race {race_id} - Dummy Data",
@@ -143,7 +83,6 @@ def make_dummy_race(race_id):
         "time": f"{18 + race_id:02d}:45",
     }
     return race, LOCAL_FALLBACK_HORSES, LOCAL_FALLBACK_TRAINERS
-
 
 def parse_racecard_page(html, racedate="", racecourse="", raceno=None):
     soup = BeautifulSoup(html, "html.parser")
@@ -222,7 +161,6 @@ def parse_racecard_page(html, racedate="", racecourse="", raceno=None):
 
     return parsed_races, parsed_horses, parsed_trainers
 
-
 def load_real_data(racedate="", racecourse="", raceno=None):
     params = {}
     if racedate:
@@ -244,7 +182,6 @@ def load_real_data(racedate="", racecourse="", raceno=None):
         logger.exception("Live fetch failed, fallback used: %s", e)
 
     return LOCAL_FALLBACK_RACES, LOCAL_FALLBACK_HORSES, LOCAL_FALLBACK_TRAINERS
-
 
 def build_race_detail(race, horses_map, trainers_map):
     race_horses = [horses_map[h_id] for h_id in race.get("horses", []) if h_id in horses_map]
@@ -284,7 +221,6 @@ def build_race_detail(race, horses_map, trainers_map):
     }
     return race_horses, race_trainers, summary, active_detail
 
-
 def build_horse_detail(horse):
     return {
         "type": "horse",
@@ -299,7 +235,6 @@ def build_horse_detail(horse):
         ],
     }
 
-
 def build_trainer_detail(trainer, trainer_horses):
     return {
         "type": "trainer",
@@ -310,7 +245,6 @@ def build_trainer_detail(trainer, trainer_horses):
             ("Horses", ", ".join(h.get("name", "") for h in trainer_horses)),
         ],
     }
-
 
 def fetch_external_page(url):
     try:
@@ -324,6 +258,15 @@ def fetch_external_page(url):
         logger.exception("Failed to fetch external page: %s", e)
         return {"ok": False, "title": "Fetch failed", "url": url, "body_text": "", "error": str(e)}
 
+def open_remote_chrome(url: str):
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.connect_over_cdp(CHROME_CDP_URL)
+            context = browser.contexts[0] if browser.contexts else browser.new_context()
+            page = context.pages[0] if context.pages else context.new_page()
+            page.goto(url, wait_until="domcontentloaded")
+    except Exception as e:
+        logger.exception("Failed to open remote chrome: %s", e)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -339,13 +282,11 @@ def login():
         error = "帳號或密碼錯誤"
     return render_template("login.html", error=error)
 
-
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
     return redirect(url_for("login"))
-
 
 @app.route("/")
 @login_required
@@ -388,7 +329,6 @@ def home():
         topbar_links=TOPBAR_LINKS,
     )
 
-
 @app.route("/race/<int:race_id>")
 @login_required
 def race_detail(race_id):
@@ -414,8 +354,8 @@ def race_detail(race_id):
         topbar_links=TOPBAR_LINKS,
         left_panel=None,
         right_panel=None,
+        browser_url="",
     )
-
 
 @app.route("/open-link")
 @login_required
@@ -447,8 +387,8 @@ def open_link():
         topbar_links=TOPBAR_LINKS,
         left_panel=fetched,
         right_panel=None,
+        browser_url=url,
     )
-
 
 @app.route("/open-topbar")
 @login_required
@@ -469,6 +409,8 @@ def open_topbar_link():
         race_horses, race_trainers, summary, active_detail = build_race_detail(dummy_race, dummy_horses, dummy_trainers)
         race_for_template = dummy_race
 
+    threading.Thread(target=open_remote_chrome, args=(url,), daemon=True).start()
+
     return render_template(
         "race.html",
         race=race_for_template,
@@ -480,8 +422,39 @@ def open_topbar_link():
         topbar_links=TOPBAR_LINKS,
         left_panel=None,
         right_panel=fetched,
+        browser_url=url,
     )
 
+@app.route("/open-browser")
+@login_required
+def open_browser():
+    url = request.args.get("url", "").strip() or "https://racing.hkjc.com/zh-hk/local/information/fixture"
+    races_data, horses_data, trainers_data = load_real_data()
+    race = next((r for r in races_data if int(r.get("id", 0)) == 1), None)
+
+    if race:
+        race_horses, race_trainers, summary, active_detail = build_race_detail(race, horses_data, trainers_data)
+        race_for_template = race
+    else:
+        dummy_race, dummy_horses, dummy_trainers = make_dummy_race(1)
+        race_horses, race_trainers, summary, active_detail = build_race_detail(dummy_race, dummy_horses, dummy_trainers)
+        race_for_template = dummy_race
+
+    threading.Thread(target=open_remote_chrome, args=(url,), daemon=True).start()
+
+    return render_template(
+        "race.html",
+        race=race_for_template,
+        race_horses=race_horses,
+        race_trainers=race_trainers,
+        summary=summary,
+        quick_races=races_data,
+        active_detail=active_detail,
+        topbar_links=TOPBAR_LINKS,
+        left_panel=None,
+        right_panel=None,
+        browser_url=url,
+    )
 
 @app.route("/horse/<int:horse_id>")
 @login_required
@@ -509,8 +482,8 @@ def horse_detail(horse_id):
         topbar_links=TOPBAR_LINKS,
         left_panel=None,
         right_panel=None,
+        browser_url="",
     )
-
 
 @app.route("/trainer/<trainer_id>")
 @login_required
@@ -540,13 +513,12 @@ def trainer_detail(trainer_id):
         topbar_links=TOPBAR_LINKS,
         left_panel=None,
         right_panel=None,
+        browser_url="",
     )
-
 
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html", topbar_links=TOPBAR_LINKS), 404
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)

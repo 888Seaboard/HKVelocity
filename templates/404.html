@@ -1,8 +1,10 @@
 {% extends "base.html" %}
-{% block title %}404{% endblock %}
+{% block title %}404 - HKVelocity{% endblock %}
+
 {% block content %}
 <div class="card">
-  <h2>404</h2>
-  <p>Page not found.</p>
+    <h1 class="page-title">404</h1>
+    <p class="muted">你要找的頁面不存在。</p>
+    <p><a class="btn" href="{{ url_for('home') }}">回到首頁</a></p>
 </div>
 {% endblock %}

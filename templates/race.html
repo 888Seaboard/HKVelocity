@@ -3,7 +3,6 @@
 
 {% block content %}
 <div class="race-page fixed-four">
-
     <div class="race-header">
         <div class="race-head-left">
             <span class="info-item">Race {{ summary.race_no if summary else '-' }}</span>
@@ -16,25 +15,17 @@
         <div class="race-head-right">
             <a href="{{ url_for('home') }}">Home</a>
             {% for n in range(1, 12) %}
-                <a class="race-btn {% if race and race.id == n %}active{% endif %}"
-                   href="{{ url_for('race_detail', race_id=n) }}">
-                    R{{ n }}
-                </a>
+                <a class="race-btn {% if race and race.id == n %}active{% endif %}" href="{{ url_for('race_detail', race_id=n) }}">R{{ n }}</a>
             {% endfor %}
         </div>
     </div>
 
     <div class="quad-grid">
-
         <section class="quad quad-race-list">
             <div class="panel-title">Race List</div>
-
             <div class="button-row">
                 {% for r in quick_races %}
-                <a class="race-btn {% if race and race.id == r.id %}active{% endif %}"
-                   href="{{ url_for('race_detail', race_id=r.id) }}">
-                    R{{ r.id }}
-                </a>
+                <a class="race-btn {% if race and race.id == r.id %}active{% endif %}" href="{{ url_for('race_detail', race_id=r.id) }}">R{{ r.id }}</a>
                 {% endfor %}
             </div>
 
@@ -56,16 +47,10 @@
                         {% if race_horses %}
                             {% for horse in race_horses %}
                             <tr>
-                                <td class="wrap">
-                                    <a href="{{ url_for('horse_detail', horse_id=horse.id) }}">{{ horse.name }}</a>
-                                </td>
-                                <td class="wrap">
-                                    <a href="{{ url_for('open_link', url=horse.official_link) }}">Open</a>
-                                </td>
+                                <td class="wrap"><a href="{{ url_for('horse_detail', horse_id=horse.id) }}">{{ horse.name }}</a></td>
+                                <td class="wrap"><a href="{{ url_for('open_link', url=horse.official_link) }}">Open</a></td>
                                 <td class="wrap">-</td>
-                                <td class="wrap">
-                                    <a href="{{ url_for('trainer_detail', trainer_id=horse.trainer_id) }}">{{ horse.trainer }}</a>
-                                </td>
+                                <td class="wrap"><a href="{{ url_for('trainer_detail', trainer_id=horse.trainer_id) }}">{{ horse.trainer }}</a></td>
                                 <td>{{ horse.draw }}</td>
                                 <td>{{ horse.weight }}</td>
                                 <td>{{ horse.rating }}</td>
@@ -88,7 +73,9 @@
                 {% for item in topbar_links %}
                 <div class="detail-row">
                     <span>{{ item.label }}</span>
-                    <div><a href="{{ url_for('open_topbar_link', url=item.url) }}">Open</a></div>
+                    <div>
+                        <a href="{{ url_for('open_topbar_link', url=item.url) }}">{{ item.desc }}</a>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -118,38 +105,47 @@
             {% endif %}
         </section>
 
-<section class="quad quad-topbar-detail">
-    <div class="panel-title">Active detail of topbar links</div>
-
-    {% if right_panel %}
-        <div class="external-view">
-            <div class="external-title">{{ right_panel.title }}</div>
-            <div class="external-url">{{ right_panel.url }}</div>
-
-            {% if right_panel.ok %}
-                {% if right_panel.body_text %}
-                    <pre class="external-body">{{ right_panel.body_text }}</pre>
-                {% else %}
-                    <div class="detail-empty">No text content found on this page.</div>
-                {% endif %}
-            {% else %}
-                <div class="detail-empty">Fetch failed: {{ right_panel.error }}</div>
-            {% endif %}
-        </div>
-    {% else %}
-        <div class="detail-list">
-            {% for item in topbar_links %}
-            <div class="detail-row">
-                <span>{{ item.label }}</span>
-                <div>
-                    <a href="{{ url_for('open_topbar_link', url=item.url) }}">Open</a>
+        <section class="quad quad-topbar-detail">
+            <div class="panel-title">Active detail of topbar links</div>
+            {% if browser_url %}
+            <div class="browser-toolbar">
+                <div class="browser-title">Remote Browser</div>
+                <div class="browser-actions">
+                    <a href="{{ browser_url }}" target="_blank">Open target link</a>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-</section>
-
+            <iframe
+                class="browser-frame"
+                src="http://localhost:6080/vnc.html?autoconnect=true&resize=scale"
+                allow="clipboard-read; clipboard-write"
+            ></iframe>
+            {% elif right_panel %}
+                <div class="external-view">
+                    <div class="external-title">{{ right_panel.title }}</div>
+                    <div class="external-url">{{ right_panel.url }}</div>
+                    {% if right_panel.ok %}
+                        {% if right_panel.body_text %}
+                            <pre class="external-body">{{ right_panel.body_text }}</pre>
+                        {% else %}
+                            <div class="detail-empty">No text content found on this page.</div>
+                        {% endif %}
+                    {% else %}
+                        <div class="detail-empty">Fetch failed: {{ right_panel.error }}</div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="detail-list">
+                    {% for item in topbar_links %}
+                    <div class="detail-row">
+                        <span>{{ item.label }}</span>
+                        <div>
+                            <a href="{{ url_for('open_topbar_link', url=item.url) }}">{{ item.desc }}</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </section>
     </div>
 </div>
 {% endblock %}
