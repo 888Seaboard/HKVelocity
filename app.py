@@ -525,5 +525,17 @@ def calculator():
 def page_not_found(e):
     return render_template("404.html", topbar_links=TOPBAR_LINKS), 404
 
+@app.route("/proxy")
+@login_required
+def hkjc_proxy():
+    # This captures the 'url' parameter from the query string
+    target_url = request.args.get("url")
+    if not target_url:
+        return "No URL provided", 400
+    
+    # For a simple fix, we redirect to the actual HKJC site
+    # Or you could return an iframe-friendly response
+    return redirect(target_url)
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
