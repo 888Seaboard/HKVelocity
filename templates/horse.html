@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Horse Detail - HKMindex{% endblock %}
+
+{% block content %}
+{% if horse %}
+    <h1>{{ horse.name }}</h1>
+
+    <div class="card">
+        <p><strong>Horse ID:</strong> {{ horse.id }}</p>
+        <p><strong>Trainer:</strong>
+            {% if trainer %}
+                <a href="/trainer/{{ horse.trainer_id }}">{{ trainer.name }}</a>
+            {% else %}
+                {{ horse.trainer }}
+            {% endif %}
+        </p>
+        <p><strong>Draw:</strong> {{ horse.draw }}</p>
+        <p><strong>Weight:</strong> {{ horse.weight }}</p>
+        <p><strong>Rating:</strong> {{ horse.rating }}</p>
+        <p><strong>Form:</strong> {{ horse.form }}</p>
+        <p><strong>Official Link:</strong> <a href="{{ horse.official_link }}" target="_blank">Open HKJC</a></p>
+    </div>
+{% else %}
+    <p>Horse not found.</p>
+{% endif %}
+{% endblock %}

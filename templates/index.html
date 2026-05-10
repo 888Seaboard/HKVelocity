@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}HKVelocity{% endblock %}
+
+{% block content %}
+<div class="home-layout">
+    <section class="home-left">
+        <div class="page-title">賽事總覽</div>
+
+        <div class="searchbar">
+            <form method="get" action="{{ url_for('home') }}" class="searchbar">
+                <input type="text" name="q" value="{{ q }}" placeholder="Search race / course">
+                <select name="course">
+                    <option value="">All Courses</option>
+                    {% for c in courses %}
+                    <option value="{{ c }}" {% if course == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+                <select name="sort">
+                    <option value="id" {% if sort == 'id' %}selected{% endif %}>Sort by Race No</option>
+                    <option value="date" {% if sort == 'date' %}selected{% endif %}>Sort by Date</option>
+                    <option value="distance" {% if sort == 'distance' %}selected{% endif %}>Sort by Distance</option>
+                </select>
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
+        <div class="table-wrap">
+            <table class="list-table">
+                <thead>
+                    <tr>
+                        <th>場次</th>
+                        <th>級別</th>
+                        <th>賽道</th>
+                        <th>日期</th>
+                        <th>時間</th>
+                        <th>距離</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in races %}
+                    <tr>
+                        <td><a href="{{ url_for('race_detail', race_id=r.id) }}">R{{ r.id }}</a></td>
+                        <td>{{ r.class }}</td>
+                        <td>{{ r.course }}</td>
+                        <td>{{ r.date }}</td>
+                        <td>{{ r.time }}</td>
+                        <td>{{ r.distance }}m</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <aside class="home-right">
+        <div class="quad">
+            <div class="panel-title">品題馬匹</div>
+            <div class="detail-list">
+                {% for horse in featured_horses %}
+                <div class="detail-row">
+                    <span>{{ horse.name }}</span>
+                    <div>
+                        <a href="{{ url_for('horse_detail', horse_id=horse.id) }}">Open</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="quad">
+            <div class="panel-title">賽日備忘</div>
+            <div class="detail-list">
+                {% for label, value in race_track_notes %}
+                <div class="detail-row">
+                    <span>{{ label }}</span>
+                    <div>{{ value }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Login - HKVelocity{% endblock %}
+
+{% block content %}
+<div class="login-page">
+    <div class="login-card">
+        <h1>Login</h1>
+
+        {% if error %}
+            <div class="flash">{{ error }}</div>
+        {% endif %}
+
+        <form method="post">
+            <input type="text" name="username" placeholder="Username" autocomplete="username" required>
+            <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+            <button type="submit" class="btn-link" style="width:100%;">Login</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

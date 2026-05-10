@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}{{ race.title if race else "HKVelocity" }}{% endblock %}
+
+{% block content %}
+<div class="race-page fixed-four">
+    <div class="race-header">
+        <div class="race-head-left">
+            <span class="info-item">Race {{ summary.race_no if summary else '-' }}</span>
+            <span class="info-item">{{ summary.class if summary else '' }}</span>
+            <span class="info-item">{{ summary.course if summary else '' }}</span>
+            <span class="info-item">{{ summary.date if summary else '' }}</span>
+            <span class="info-item">{{ summary.time if summary else '' }}</span>
+        </div>
+
+        <div class="race-head-right">
+            <a href="{{ url_for('home') }}">主頁
+            </a>
+            {% for n in range(1, 12) %}
+                <a class="race-btn {% if race and race.id == n %}active{% endif %}" href="{{ url_for('race_detail', race_id=n) }}">R{{ n }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="quad-grid">
+        <section class="quad quad-race-list">
+            <div class="panel-title">排位表</div>
+            <div class="table-wrap">
+                <table class="race-table">
+                    <thead>
+                        <tr>
+                            <th>中文名稱</th>
+                            <th>鏈接</th>
+                            <th>騎師</th>
+                            <th>練馬師</th>
+                            <th>檔位</th>
+                            <th>負磅</th>
+                            <th>評分</th>
+                            <th>形勢</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if race_horses %}
+                            {% for horse in race_horses %}
+                            <tr>
+                                <td class="wrap"><a href="{{ url_for('horse_detail', horse_id=horse.id) }}">{{ horse.name }}</a></td>
+                                <td class="wrap"><a href="{{ url_for('open_link', url=horse.official_link) }}">Open</a></td>
+                                <td class="wrap">-</td>
+                                <td class="wrap"><a href="{{ url_for('trainer_detail', trainer_id=horse.trainer_id) }}">{{ horse.trainer }}</a></td>
+                                <td>{{ horse.draw }}</td>
+                                <td>{{ horse.weight }}</td>
+                                <td>{{ horse.rating }}</td>
+                                <td class="wrap">{{ horse.form }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="detail-empty">No race horses available.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="quad quad-topbar">
+            <div class="panel-title">Topbar Links</div>
+            <div class="detail-list">
+                {% for item in topbar_links %}
+                <div class="detail-row">
+                    <span>{{ item.label }}</span>
+                    <div>
+                        <a href="{{ url_for('open_topbar_link', url=item.url) }}">{{ item.desc }}</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="quad quad-race-detail">
+            <div class="panel-title">Active detail of race list / race buttons</div>
+            {% if left_panel and left_panel.ok %}
+            <div class="external-view">
+                <div class="external-title">{{ left_panel.title }}</div>
+                <div class="external-url">{{ left_panel.url }}</div>
+                <pre class="external-body">{{ left_panel.body_text }}</pre>
+            </div>
+            {% else %}
+            <div class="detail-list">
+                {% if active_detail and active_detail["rows"] %}
+                    {% for label, value in active_detail["rows"] %}
+                    <div class="detail-row">
+                        <span>{{ label }}</span>
+                        <div>{{ value }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="detail-empty">Select a race button or click Open.</div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="quad quad-topbar-detail" id="quad-topbar-detail">
+            <div class="panel-title" id="panel-title-topbar">
+                Active detail of topbar links
+                {% if browser_url %}
+                <button onclick="toggleFullscreen()" class="fullscreen-btn" title="Toggle Fullscreen">⛶</button>
+                {% endif %}
+            </div>
+            {% if browser_url %}
+            <div class="browser-toolbar">
+                <div class="browser-title">HKJC Browser</div>
+                <div class="browser-actions">
+                    <button onclick="reloadBrowser()" class="reload-btn">Reload</button>
+                    <a href="{{ browser_url.split('?url=')[1] if '?url=' in browser_url else '#' }}" target="_blank" class="open-link-btn">Open in new tab</a>
+                </div>
+            </div>
+            <div class="browser-frame-wrapper" id="browser-wrapper">
+                <div class="browser-loading" id="browser-loading">Loading HKJC content...</div>
+                <iframe
+                    id="browser-frame"
+                    class="browser-frame"
+                    src="{{ browser_url }}"
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
+                    referrerpolicy="no-referrer"
+                    loading="lazy"
+                    onload="document.getElementById('browser-loading').style.display='none'"
+                    onerror="document.getElementById('browser-loading').innerHTML='Failed to load page'"
+                ></iframe>
+            </div>
+            <script>
+                let isFullscreen = false;
+                let originalParent = null;
+                let originalNextSibling = null;
+                
+                function reloadBrowser() {
+                    const iframe = document.getElementById('browser-frame');
+                    document.getElementById('browser-loading').style.display = 'block';
+                    document.getElementById('browser-loading').innerHTML = 'Loading HKJC content...';
+                    iframe.src = iframe.src;
+                }
+                
+                function toggleFullscreen() {
+                    const wrapper = document.getElementById('browser-wrapper');
+                    const section = document.getElementById('quad-topbar-detail');
+                    const btn = event.target;
+                    
+                    if (!isFullscreen) {
+                        // 進入全屏模式
+                        originalParent = wrapper.parentNode;
+                        originalNextSibling = wrapper.nextSibling;
+                        
+                        document.body.appendChild(wrapper);
+                        
+                        wrapper.style.position = 'fixed';
+                        wrapper.style.top = '0';
+                        wrapper.style.left = '0';
+                        wrapper.style.width = '100vw';
+                        wrapper.style.height = '100vh';
+                        wrapper.style.zIndex = '9999';
+                        wrapper.style.borderRadius = '0';
+                        wrapper.style.margin = '0';
+                        wrapper.style.padding = '0';
+                        
+                        btn.textContent = '⛶ Exit';
+                        btn.style.color = '#ff6b6b';
+                        isFullscreen = true;
+                    } else {
+                        // 退出全屏模式
+                        if (originalParent) {
+                            if (originalNextSibling) {
+                                originalParent.insertBefore(wrapper, originalNextSibling);
+                            } else {
+                                originalParent.appendChild(wrapper);
+                            }
+                        }
+                        
+                        wrapper.style.position = '';
+                        wrapper.style.top = '';
+                        wrapper.style.left = '';
+                        wrapper.style.width = '';
+                        wrapper.style.height = '';
+                        wrapper.style.zIndex = '';
+                        wrapper.style.borderRadius = '';
+                        wrapper.style.margin = '';
+                        wrapper.style.padding = '';
+                        
+                        btn.textContent = '⛶';
+                        btn.style.color = '';
+                        isFullscreen = false;
+                    }
+                }
+            </script>
+            {% elif right_panel %}
+                <div class="external-view">
+                    <div class="external-title">{{ right_panel.title }}</div>
+                    <div class="external-url">{{ right_panel.url }}</div>
+                    {% if right_panel.ok %}
+                        {% if right_panel.body_text %}
+                            <pre class="external-body">{{ right_panel.body_text }}</pre>
+                        {% else %}
+                            <div class="detail-empty">No text content found on this page.</div>
+                        {% endif %}
+                    {% else %}
+                        <div class="detail-empty">Fetch failed: {{ right_panel.error }}</div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="detail-empty">Select a topbar link to view details.</div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

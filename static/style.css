@@ -1,0 +1,1053 @@
+:root {
+    --bg: #0f1115;
+    --panel: #161a22;
+    --panel-2: #1c2230;
+    --text: #e7eaf0;
+    --muted: #9aa4b2;
+    --line: #2a3242;
+    --gold: #d4af37;
+    --gold-bright: #f7e08a;
+    --gold-deep: #a87d17;
+    --danger: #ff6b6b;
+    --success: #3ddc97;
+    --shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.14);
+    --radius: 14px;
+    --transition: all 0.2s ease;
+    --gold-border: rgba(212, 175, 55, 0.16);
+    --gold-border-dark: rgba(212, 175, 55, 0.12);
+    --gold-border-light: rgba(212, 175, 55, 0.28);
+    --gold-border-lighter: rgba(212, 175, 55, 0.38);
+    --bg-light: rgba(255, 255, 255, 0.04);
+    --bg-lighter: rgba(255, 255, 255, 0.06);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    min-height: 100%;
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, "Noto Sans HK", "Microsoft JhengHei", sans-serif;
+    background:
+        radial-gradient(circle at top, rgba(212, 175, 55, 0.08) 0%, transparent 28%),
+        radial-gradient(circle at top, #151a24 0%, #0f1115 55%, #0b0d12 100%);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+a {
+    color: var(--gold);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+a:hover {
+    color: var(--gold-bright);
+    text-decoration: underline;
+}
+
+/* ============= APP 佈局 ============= */
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 頂部導航欄 */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: linear-gradient(180deg, rgba(29, 32, 44, 0.96), rgba(18, 20, 28, 0.96));
+    border-bottom: 1px solid rgba(212, 175, 55, 0.28);
+    border-top: 1px solid rgba(212, 175, 55, 0.16);
+    flex: 0 0 auto;
+    z-index: 10;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.brand a {
+    font-weight: 800;
+    font-size: 40px;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: baseline;
+    white-space: nowrap;
+}
+
+.brand-hk {
+    color: #ffffff;
+}
+
+.brand-velocity {
+    color: var(--gold);
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.28), 0 0 18px rgba(212, 175, 55, 0.12);
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-link {
+    padding: 8px 14px;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
+    color: var(--gold);
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 14px;
+}
+
+.btn-link:hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+    border-color: rgba(212, 175, 55, 0.48);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+.btn-link:active {
+    transform: translateY(0);
+}
+
+.user-badge {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 4px 9px;
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.02);
+    white-space: nowrap;
+}
+
+.main-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 12px;
+    overflow: hidden;
+}
+
+/* ============= 通用 Panel 樣式 ============= */
+.panel-base,
+.race-header,
+.quad,
+.calc-input-panel,
+.calc-results-panel,
+.login-card {
+    padding: 14px;
+    background: linear-gradient(180deg, rgba(23, 27, 37, 0.98), rgba(18, 21, 29, 0.98));
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #f2f4f8;
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-section {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--gold-border-dark);
+}
+
+.panel-section:last-of-type {
+    border-bottom: none;
+}
+
+.panel-section h2 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold-bright);
+}
+
+/* ============= 表單元素 ============= */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    color: var(--gold-bright);
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.form-input {
+    padding: 10px 12px;
+    border: 1px solid var(--gold-border);
+    border-radius: 8px;
+    background: var(--bg-light);
+    color: var(--text);
+    font-size: 13px;
+    transition: var(--transition);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--gold-border-lighter);
+    background: var(--bg-lighter);
+}
+
+.form-input::placeholder {
+    color: var(--muted);
+}
+
+/* ============= RACE 頁面 ============= */
+.fixed-four {
+    height: calc(100vh - 76px);
+    min-height: 0;
+}
+
+.race-page {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.race-header {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+}
+
+.race-head-left,
+.race-head-right,
+.race-header-left,
+.race-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.info-item {
+    padding: 6px 12px;
+    border: 1px solid var(--gold-border);
+    border-radius: 999px;
+    color: #f2f4f8;
+    background: var(--bg-light);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.race-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--gold-border);
+    background: var(--bg-light);
+    color: var(--gold);
+    font-weight: 800;
+    transition: var(--transition);
+}
+
+.race-btn:hover {
+    background: rgba(212, 175, 55, 0.12);
+}
+
+.race-btn.active {
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color: #1b1403;
+    border-color: var(--gold);
+}
+
+.quad-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+}
+
+.quad {
+    min-width: 0;
+    min-height: 0;
+}
+
+.table-wrap {
+    overflow: auto;
+    min-height: 0;
+    border-radius: 12px;
+    border: 1px solid rgba(42, 50, 66, 0.95);
+}
+
+.table-base,
+.race-table,
+.list-table,
+.combo-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.table-base th,
+.table-base td,
+.race-table th,
+.race-table td,
+.list-table th,
+.list-table td,
+.combo-results-table th,
+.combo-results-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(42, 50, 66, 0.95);
+    vertical-align: top;
+}
+
+.table-base th,
+.race-table th,
+.list-table th {
+    background: rgba(255, 255, 255, 0.03);
+    text-align: left;
+    color: #d8deea;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.table-base tr:hover td,
+.race-table tr:hover td,
+.list-table tr:hover td {
+    background: rgba(212, 175, 55, 0.04);
+}
+
+.wrap {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.detail-list {
+    display: grid;
+    gap: 10px;
+    overflow: auto;
+    min-height: 0;
+    padding-right: 4px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--gold-border);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.detail-row:hover {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+    border-color: var(--gold-border-light);
+}
+
+.detail-row span {
+    color: var(--gold-bright);
+    font-weight: 700;
+    min-width: 92px;
+}
+
+.detail-row > div {
+    color: var(--text);
+    text-align: right;
+    word-break: break-word;
+}
+
+.detail-empty {
+    color: var(--muted);
+    padding: 6px 2px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
+}
+.external-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.external-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold-bright);
+}
+
+.external-url {
+    font-size: 12px;
+    color: var(--muted);
+    word-break: break-all;
+}
+
+.external-body {
+    margin: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text);
+    background: var(--bg-light);
+    border: 1px solid rgba(42, 50, 66, 0.95);
+    border-radius: 12px;
+    padding: 12px;
+    overflow: auto;
+    font-size: 13px;
+}
+
+/* ============= HOME 頁面 ============= */
+.home-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+    gap: 16px;
+    align-items: start;
+    min-height: 0;
+}
+
+.home-left,
+.home-right {
+    min-width: 0;
+    min-height: 0;
+}
+
+.home-right {
+    display: grid;
+    gap: 16px;
+}
+
+.home-right .quad {
+    min-height: 0;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #f2f4f8;
+}
+
+.searchbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    flex: 0 0 auto;
+}
+
+.searchbar input,
+.searchbar select,
+.searchbar button {
+    background: var(--bg-light);
+    color: var(--text);
+    border: 1px solid var(--gold-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    transition: var(--transition);
+}
+
+.searchbar input:focus,
+.searchbar select:focus {
+    outline: none;
+    border-color: var(--gold-border-lighter);
+    background: var(--bg-lighter);
+}
+
+.searchbar button {
+    cursor: pointer;
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
+    font-weight: 700;
+}
+
+.searchbar button:hover {
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+}
+
+/* ============= 登入頁面 ============= */
+.login-page {
+    min-height: calc(100vh - 76px);
+    display: grid;
+    place-items: center;
+}
+
+.login-card {
+    width: min(420px, 92vw);
+    padding: 22px;
+    border-radius: 18px;
+}
+
+.login-card h1 {
+    margin: 0 0 16px;
+    color: #fff;
+    font-size: 24px;
+}
+
+.login-card input,
+.login-card button {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--gold-border);
+    background: var(--bg-light);
+    color: var(--text);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.login-card input:focus {
+    outline: none;
+    border-color: var(--gold-border-lighter);
+    background: var(--bg-lighter);
+}
+
+.login-card button {
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.login-card button:hover {
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+}
+
+.flash-wrap {
+    margin-bottom: 12px;
+}
+
+.flash {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    color: var(--text);
+}
+
+/* ============= 計算器頁面 ============= */
+.calculator-page {
+    min-height: calc(100vh - 76px);
+    padding: 20px;
+    background: linear-gradient(180deg, rgba(15, 17, 21, 0.98), rgba(11, 13, 18, 0.98));
+}
+
+.calc-header {
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.calc-header h1 {
+    margin: 0;
+    font-size: 32px;
+    color: #f2f4f8;
+    text-shadow: 0 0 16px rgba(212, 175, 55, 0.2);
+}
+
+.calc-main-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.calc-input-panel,
+.calc-results-panel {
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.calc-input-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.calc-input-group {
+    margin-bottom: 12px;
+}
+
+.calc-input-group label {
+    display: block;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.calc-btn {
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(247, 224, 138, 1), rgba(212, 175, 55, 1));
+    color: #1b1403;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 8px;
+}
+
+.calc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(212, 175, 55, 0.3);
+}
+
+.calc-btn:active {
+    transform: translateY(0);
+}
+
+/* 賠率輸入 */
+.race-input-group {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.race-input-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gold);
+    margin: 0;
+}
+
+.race-odds-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.race-odds {
+    padding: 8px 10px;
+    border: 1px solid var(--gold-border);
+    border-radius: 6px;
+    background: var(--bg-light);
+    color: var(--text);
+    font-size: 12px;
+    transition: var(--transition);
+}
+
+.race-odds::placeholder {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.race-odds:focus {
+    outline: none;
+    border-color: var(--gold-border-lighter);
+    background: var(--bg-lighter);
+}
+
+/* 計算器結果 */
+.calc-results-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.results-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--gold-border-dark);
+    border-radius: 10px;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.summary-item.highlight .summary-value {
+    color: #f7e08a;
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+}
+
+.summary-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.results-table-wrapper h3 {
+    margin: 0 0 12px;
+    color: var(--gold-bright);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.results-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.results-grid::-webkit-scrollbar-track {
+    background: rgba(212, 175, 55, 0.08);
+    border-radius: 3px;
+}
+
+.results-grid::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.3);
+    border-radius: 3px;
+}
+
+.results-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.5);
+}
+
+.combo-result-item {
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--gold-border);
+    border-radius: 8px;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.combo-result-item:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+    border-color: var(--gold-border-light);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15);
+    transform: translateY(-2px);
+}
+
+.item-header {
+    font-weight: 700;
+    color: var(--gold);
+    font-size: 11px;
+}
+
+.item-combo {
+    color: var(--text);
+    word-break: break-word;
+    line-height: 1.4;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 6px 8px;
+    border-radius: 4px;
+    border-left: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.item-odds {
+    color: var(--muted);
+}
+
+.item-odds strong {
+    color: var(--gold-bright);
+}
+
+.item-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-top: 1px solid var(--gold-border-dark);
+    padding-top: 8px;
+}
+
+.item-return {
+    color: var(--success);
+}
+
+.item-return strong {
+    color: #3ddc97;
+}
+
+.item-profit {
+    color: var(--muted);
+}
+
+.item-profit strong {
+    color: #f7e08a;
+}
+
+/* 組合結果表格 */
+.results-table-wrapper {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.results-table-wrapper h3 {
+    margin: 0 0 12px;
+    color: var(--gold-bright);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.combo-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--gold-border);
+    border-radius: 8px;
+    overflow: hidden;
+    flex: 1;
+    max-height: 600px;
+}
+
+.combo-results-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.combo-results-table th {
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.12), rgba(212, 175, 55, 0.06));
+    color: var(--gold-bright);
+    font-weight: 700;
+    font-size: 12px;
+    text-align: center;
+    border-bottom: 2px solid var(--gold-border-light);
+}
+
+.combo-results-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--gold-border-dark);
+    font-size: 12px;
+    color: var(--text);
+    text-align: center;
+}
+
+.combo-results-table tbody {
+    display: block;
+    width: 100%;
+    overflow-y: auto;
+    max-height: 500px;
+}
+
+.combo-results-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.combo-results-table tbody tr:hover {
+    background: rgba(212, 175, 55, 0.08);
+}
+
+.combo-results-table tbody tr:hover td {
+    background: rgba(212, 175, 55, 0.08);
+}
+
+.combo-number {
+    color: var(--gold);
+    font-weight: 700;
+    width: 50px !important;
+}
+
+.combo-result {
+    color: var(--text);
+    text-align: left;
+    flex: 1;
+    word-break: break-word;
+}
+
+.combo-odds {
+    color: var(--gold-bright);
+    font-weight: 700;
+}
+
+.combo-bet {
+    color: var(--muted);
+}
+
+.combo-return {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.combo-profit {
+    font-weight: 700;
+}
+
+.combo-results-table::-webkit-scrollbar {
+    width: 6px;
+}
+
+.combo-results-table::-webkit-scrollbar-track {
+    background: rgba(212, 175, 55, 0.08);
+}
+
+.combo-results-table::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.3);
+    border-radius: 3px;
+}
+
+.combo-results-table::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.5);
+}
+@media (max-width: 1200px) {
+    .calc-main-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .calc-input-panel {
+        position: static;
+    }
+
+    .results-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    .quad-grid {
+        gap: 10px;
+    }
+
+    .quad {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 960px) {
+    .quad-grid,
+    .home-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    body {
+        overflow: auto;
+    }
+
+    .fixed-four {
+        height: auto;
+        min-height: calc(100vh - 76px);
+    }
+
+    .main-content {
+        overflow: visible;
+    }
+
+    .race-page {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .race-odds-inputs {
+        grid-template-columns: 1fr;
+    }
+
+    .results-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .results-grid {
+        grid-template-columns: 1fr;
+        max-height: 400px;
+    }
+
+    .combo-results-table th,
+    .combo-results-table td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+
+    .combo-results-table tbody {
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 640px) {
+    .calculator-page {
+        padding: 12px;
+    }
+
+    .calc-header h1 {
+        font-size: 24px;
+    }
+
+    .race-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .race-head-left,
+    .race-head-right {
+        width: 100%;
+    }
+
+    .panel-title {
+        font-size: 16px;
+    }
+
+    .searchbar {
+        flex-direction: column;
+    }
+
+    .searchbar input,
+    .searchbar select,
+    .searchbar button {
+        width: 100%;
+    }
+
+    .home-layout {
+        grid-template-columns: 1fr;
+    }
+}
