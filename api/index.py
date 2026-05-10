@@ -6,9 +6,12 @@ from bs4 import BeautifulSoup
 from flask import Flask, render_template, abort, request, redirect, url_for, Response
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from playwright.sync_api import sync_playwright
 
-app = Flask(__name__, static_folder="../static", static_url_path="/static")  # static_folder needs to be relative!
+app = Flask(
+    __name__,
+    static_folder=os.path.join(os.path.dirname(__file__), '../static'),
+    template_folder=os.path.join(os.path.dirname(__file__), '../templates')
+)
 app.secret_key = os.environ.get("SECRET_KEY", "change-me-please")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -259,31 +262,6 @@ def fetch_external_page(url):
         logger.exception("Failed to fetch external page: %s", e)
         return {"ok": False, "title": "Fetch failed", "url": url, "body_text": "", "error": str(e)}
 
-# --- NEW: Playwright Proxy Logic ---
-
-def proxy_hkjc_content(url):
-    """ 使用 Playwright 抓取內容並修復路徑 """
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-            )
-            page = context.new_page()
-            page.goto(url, timeout=60000, wait_until="networkidle")
-            content = page.content()
-            
-            # 修復相對路徑
-            base_url = "https://racing.hkjc.com"
-            content = content.replace('src="/', f'src="{base_url}/')
-            content = content.replace('href="/', f'href="{base_url}/')
-            content = content.replace('window.top === window.self', 'true')
-            
-            browser.close()
-            return content
-    except Exception as e:
-        logger.error(f"Playwright Proxy Error: {e}")
-        return f"<html><body><h3>無法加載網頁</h3><p>{str(e)}</p></body></html>"
 
 @app.route("/hkjc_proxy")
 @login_required
@@ -322,17 +300,7 @@ def hkjc_proxy():
         logger.error(f"Proxy Error: {e}")
         return f"<html><body><h3>無法加載網頁</h3><p>Error: {str(e)}</p></body></html>", 500
 
-# --- 原有路由與邏輯整合 ---
 
-def open_remote_chrome(url: str):
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.connect_over_cdp(CHROME_CDP_URL)
-            context = browser.contexts[0] if browser.contexts else browser.new_context()
-            page = context.pages[0] if context.pages else context.new_page()
-            page.goto(url, wait_until="domcontentloaded")
-    except Exception as e:
-        logger.exception("Failed to open remote chrome: %s", e)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
