@@ -10,10 +10,40 @@
     <div class="app-shell">
         <header class="topbar">
             <div class="brand">
-                <a href="{{ url_for('home') }}">HKVelocity</a>
+                <a href="{{ url_for('home') }}">
+                    <span class="brand-hk">HK</span><span class="brand-velocity">Velocity</span>
+                </a>
             </div>
 
             <div class="topbar-right">
+                <a class="btn-link btn-schedule"
+                   href="https://racing.hkjc.com/zh-hk/local/information/fixture"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    賽期表
+                </a>
+
+                <a class="btn-link btn-course-select"
+                   href="https://racing.hkjc.com/zh-hk/local/page/racing-course-select"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    賽道選用
+                </a>
+
+                <a class="btn-link btn-course-time"
+                   href="https://racing.hkjc.com/zh-hk/local/page/racing-course-time"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    跑道標準
+                </a>
+
+                <a class="btn-link btn-fwb"
+                   href="https://racing.hkjc.com/zh-hk/local/page/fwb-declared-starters"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    特別獎金馬
+                </a>
+
                 {% if current_user.is_authenticated %}
                     <span class="user-badge">Logged in as {{ current_user.id }}</span>
                     <a class="btn-link" href="{{ url_for('logout') }}">Logout</a>
