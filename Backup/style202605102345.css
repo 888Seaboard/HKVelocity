@@ -46,11 +46,11 @@ a {
     color: var(--gold);
     text-decoration: none;
     transition: var(--transition);
-}
 
-a:hover {
-    color: var(--gold-bright);
-    text-decoration: underline;
+    &:hover {
+        color: var(--gold-bright);
+        text-decoration: underline;
+    }
 }
 
 /* ============= APP 佈局 ============= */
@@ -111,17 +111,17 @@ a:hover {
     cursor: pointer;
     transition: var(--transition);
     font-size: 14px;
-}
 
-.btn-link:hover {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
-    border-color: rgba(212, 175, 55, 0.48);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
-}
+    &:hover {
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+        border-color: rgba(212, 175, 55, 0.48);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+    }
 
-.btn-link:active {
-    transform: translateY(0);
+    &:active {
+        transform: translateY(0);
+    }
 }
 
 .user-badge {
@@ -142,12 +142,7 @@ a:hover {
 }
 
 /* ============= 通用 Panel 樣式 ============= */
-.panel-base,
-.race-header,
-.quad,
-.calc-input-panel,
-.calc-results-panel,
-.login-card {
+.panel-base {
     padding: 14px;
     background: linear-gradient(180deg, rgba(23, 27, 37, 0.98), rgba(18, 21, 29, 0.98));
     border: 1px solid var(--gold-border);
@@ -172,17 +167,17 @@ a:hover {
 .panel-section {
     padding-bottom: 16px;
     border-bottom: 1px solid var(--gold-border-dark);
-}
 
-.panel-section:last-of-type {
-    border-bottom: none;
-}
+    &:last-of-type {
+        border-bottom: none;
+    }
 
-.panel-section h2 {
-    margin: 0 0 12px;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--gold-bright);
+    & h2 {
+        margin: 0 0 12px;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--gold-bright);
+    }
 }
 
 /* ============= 表單元素 ============= */
@@ -191,12 +186,12 @@ a:hover {
     flex-direction: column;
     gap: 8px;
     margin-bottom: 12px;
-}
 
-.form-group label {
-    color: var(--gold-bright);
-    font-weight: 700;
-    font-size: 14px;
+    & label {
+        color: var(--gold-bright);
+        font-weight: 700;
+        font-size: 14px;
+    }
 }
 
 .form-input {
@@ -207,16 +202,16 @@ a:hover {
     color: var(--text);
     font-size: 13px;
     transition: var(--transition);
-}
 
-.form-input:focus {
-    outline: none;
-    border-color: var(--gold-border-lighter);
-    background: var(--bg-lighter);
-}
+    &:focus {
+        outline: none;
+        border-color: var(--gold-border-lighter);
+        background: var(--bg-lighter);
+    }
 
-.form-input::placeholder {
-    color: var(--muted);
+    &::placeholder {
+        color: var(--muted);
+    }
 }
 
 /* ============= RACE 頁面 ============= */
@@ -232,6 +227,7 @@ a:hover {
     flex-direction: column;
     gap: 12px;
 }
+
 .race-header {
     flex: 0 0 auto;
     display: flex;
@@ -240,16 +236,15 @@ a:hover {
     gap: 12px;
     flex-wrap: wrap;
     padding: 10px 14px;
-}
+    @extend .panel-base;
 
-.race-head-left,
-.race-head-right,
-.race-header-left,
-.race-header-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    &-left,
+    &-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
 }
 
 .info-item {
@@ -274,16 +269,16 @@ a:hover {
     color: var(--gold);
     font-weight: 800;
     transition: var(--transition);
-}
 
-.race-btn:hover {
-    background: rgba(212, 175, 55, 0.12);
-}
+    &:hover {
+        background: rgba(212, 175, 55, 0.12);
+    }
 
-.race-btn.active {
-    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-    color: #1b1403;
-    border-color: var(--gold);
+    &.active {
+        background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+        color: #1b1403;
+        border-color: var(--gold);
+    }
 }
 
 .quad-grid {
@@ -298,8 +293,10 @@ a:hover {
 .quad {
     min-width: 0;
     min-height: 0;
+    @extend .panel-base;
 }
 
+/* ============= 表格 ============= */
 .table-wrap {
     overflow: auto;
     min-height: 0;
@@ -307,42 +304,37 @@ a:hover {
     border: 1px solid rgba(42, 50, 66, 0.95);
 }
 
-.table-base,
-.race-table,
-.list-table,
-.combo-results-table {
+.table-base {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
+
+    & th,
+    & td {
+        padding: 11px 14px;
+        border-bottom: 1px solid rgba(42, 50, 66, 0.95);
+        vertical-align: top;
+    }
+
+    & th {
+        background: rgba(255, 255, 255, 0.03);
+        text-align: left;
+        color: #d8deea;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    & tr:hover td {
+        background: rgba(212, 175, 55, 0.04);
+    }
 }
 
-.table-base th,
-.table-base td,
-.race-table th,
-.race-table td,
-.list-table th,
-.list-table td,
-.combo-results-table th,
-.combo-results-table td {
-    padding: 11px 14px;
-    border-bottom: 1px solid rgba(42, 50, 66, 0.95);
-    vertical-align: top;
+.race-table {
+    @extend .table-base;
 }
 
-.table-base th,
-.race-table th,
-.list-table th {
-    background: rgba(255, 255, 255, 0.03);
-    text-align: left;
-    color: #d8deea;
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.table-base tr:hover td,
-.race-table tr:hover td,
-.list-table tr:hover td {
-    background: rgba(212, 175, 55, 0.04);
+.list-table {
+    @extend .table-base;
 }
 
 .wrap {
@@ -350,6 +342,7 @@ a:hover {
     word-break: break-word;
 }
 
+/* ============= 詳情列表 ============= */
 .detail-list {
     display: grid;
     gap: 10px;
@@ -369,23 +362,23 @@ a:hover {
     border-radius: 12px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), var(--shadow-sm);
     transition: var(--transition);
-}
 
-.detail-row:hover {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
-    border-color: var(--gold-border-light);
-}
+    &:hover {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+        border-color: var(--gold-border-light);
+    }
 
-.detail-row span {
-    color: var(--gold-bright);
-    font-weight: 700;
-    min-width: 92px;
-}
+    & span {
+        color: var(--gold-bright);
+        font-weight: 700;
+        min-width: 92px;
+    }
 
-.detail-row > div {
-    color: var(--text);
-    text-align: right;
-    word-break: break-word;
+    & > div {
+        color: var(--text);
+        text-align: right;
+        word-break: break-word;
+    }
 }
 
 .detail-empty {
@@ -397,6 +390,7 @@ a:hover {
     justify-content: center;
     min-height: 100px;
 }
+
 .external-view {
     display: flex;
     flex-direction: column;
@@ -451,10 +445,10 @@ a:hover {
 .home-right {
     display: grid;
     gap: 16px;
-}
 
-.home-right .quad {
-    min-height: 0;
+    & .quad {
+        min-height: 0;
+    }
 }
 
 .page-title {
@@ -470,35 +464,35 @@ a:hover {
     flex-wrap: wrap;
     margin-bottom: 12px;
     flex: 0 0 auto;
-}
 
-.searchbar input,
-.searchbar select,
-.searchbar button {
-    background: var(--bg-light);
-    color: var(--text);
-    border: 1px solid var(--gold-border);
-    border-radius: 10px;
-    padding: 10px 12px;
-    font-size: 13px;
-    transition: var(--transition);
-}
+    & input,
+    & select,
+    & button {
+        background: var(--bg-light);
+        color: var(--text);
+        border: 1px solid var(--gold-border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 13px;
+        transition: var(--transition);
+    }
 
-.searchbar input:focus,
-.searchbar select:focus {
-    outline: none;
-    border-color: var(--gold-border-lighter);
-    background: var(--bg-lighter);
-}
+    & input:focus,
+    & select:focus {
+        outline: none;
+        border-color: var(--gold-border-lighter);
+        background: var(--bg-lighter);
+    }
 
-.searchbar button {
-    cursor: pointer;
-    background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
-    font-weight: 700;
-}
+    & button {
+        cursor: pointer;
+        background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
+        font-weight: 700;
 
-.searchbar button:hover {
-    background: linear-gradient(180deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+        &:hover {
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+        }
+    }
 }
 
 /* ============= 登入頁面 ============= */
@@ -512,41 +506,44 @@ a:hover {
     width: min(420px, 92vw);
     padding: 22px;
     border-radius: 18px;
-}
+    background: rgba(23, 27, 37, 0.98);
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    box-shadow: var(--shadow);
 
-.login-card h1 {
-    margin: 0 0 16px;
-    color: #fff;
-    font-size: 24px;
-}
+    & h1 {
+        margin: 0 0 16px;
+        color: #fff;
+        font-size: 24px;
+    }
 
-.login-card input,
-.login-card button {
-    width: 100%;
-    margin-bottom: 10px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--gold-border);
-    background: var(--bg-light);
-    color: var(--text);
-    font-size: 14px;
-    transition: var(--transition);
-}
+    & input,
+    & button {
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--gold-border);
+        background: var(--bg-light);
+        color: var(--text);
+        font-size: 14px;
+        transition: var(--transition);
+    }
 
-.login-card input:focus {
-    outline: none;
-    border-color: var(--gold-border-lighter);
-    background: var(--bg-lighter);
-}
+    & input:focus {
+        outline: none;
+        border-color: var(--gold-border-lighter);
+        background: var(--bg-lighter);
+    }
 
-.login-card button {
-    background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
-    font-weight: 700;
-    cursor: pointer;
-}
+    & button {
+        background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
+        font-weight: 700;
+        cursor: pointer;
 
-.login-card button:hover {
-    background: linear-gradient(180deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+        &:hover {
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.22));
+        }
+    }
 }
 
 .flash-wrap {
@@ -571,13 +568,13 @@ a:hover {
 .calc-header {
     margin-bottom: 24px;
     text-align: center;
-}
 
-.calc-header h1 {
-    margin: 0;
-    font-size: 32px;
-    color: #f2f4f8;
-    text-shadow: 0 0 16px rgba(212, 175, 55, 0.2);
+    & h1 {
+        margin: 0;
+        font-size: 32px;
+        color: #f2f4f8;
+        text-shadow: 0 0 16px rgba(212, 175, 55, 0.2);
+    }
 }
 
 .calc-main-layout {
@@ -591,6 +588,7 @@ a:hover {
 .calc-input-panel,
 .calc-results-panel {
     padding: 20px;
+    @extend .panel-base;
     height: fit-content;
     position: sticky;
     top: 20px;
@@ -604,14 +602,20 @@ a:hover {
 
 .calc-input-group {
     margin-bottom: 12px;
-}
 
-.calc-input-group label {
-    display: block;
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 12px;
-    margin-bottom: 6px;
+    & label {
+        display: block;
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    & select,
+    & input {
+        width: 100%;
+        @extend .form-input;
+    }
 }
 
 .calc-btn {
@@ -625,15 +629,15 @@ a:hover {
     cursor: pointer;
     transition: var(--transition);
     margin-top: 8px;
-}
 
-.calc-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(212, 175, 55, 0.3);
-}
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(212, 175, 55, 0.3);
+    }
 
-.calc-btn:active {
-    transform: translateY(0);
+    &:active {
+        transform: translateY(0);
+    }
 }
 
 /* 賠率輸入 */
@@ -643,13 +647,13 @@ a:hover {
     gap: 8px;
     align-items: center;
     margin-bottom: 8px;
-}
 
-.race-input-group label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--gold);
-    margin: 0;
+    & label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--gold);
+        margin: 0;
+    }
 }
 
 .race-odds-inputs {
@@ -666,17 +670,17 @@ a:hover {
     color: var(--text);
     font-size: 12px;
     transition: var(--transition);
-}
 
-.race-odds::placeholder {
-    color: var(--muted);
-    font-size: 11px;
-}
+    &::placeholder {
+        color: var(--muted);
+        font-size: 11px;
+    }
 
-.race-odds:focus {
-    outline: none;
-    border-color: var(--gold-border-lighter);
-    background: var(--bg-lighter);
+    &:focus {
+        outline: none;
+        border-color: var(--gold-border-lighter);
+        background: var(--bg-lighter);
+    }
 }
 
 /* 計算器結果 */
@@ -700,11 +704,11 @@ a:hover {
     display: flex;
     flex-direction: column;
     gap: 6px;
-}
 
-.summary-item.highlight .summary-value {
-    color: #f7e08a;
-    text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    &.highlight .summary-value {
+        color: #f7e08a;
+        text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    }
 }
 
 .summary-label {
@@ -733,24 +737,24 @@ a:hover {
     max-height: 600px;
     overflow-y: auto;
     padding-right: 8px;
-}
 
-.results-grid::-webkit-scrollbar {
-    width: 6px;
-}
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
 
-.results-grid::-webkit-scrollbar-track {
-    background: rgba(212, 175, 55, 0.08);
-    border-radius: 3px;
-}
+    &::-webkit-scrollbar-track {
+        background: rgba(212, 175, 55, 0.08);
+        border-radius: 3px;
+    }
 
-.results-grid::-webkit-scrollbar-thumb {
-    background: rgba(212, 175, 55, 0.3);
-    border-radius: 3px;
-}
+    &::-webkit-scrollbar-thumb {
+        background: rgba(212, 175, 55, 0.3);
+        border-radius: 3px;
 
-.results-grid::-webkit-scrollbar-thumb:hover {
-    background: rgba(212, 175, 55, 0.5);
+        &:hover {
+            background: rgba(212, 175, 55, 0.5);
+        }
+    }
 }
 
 .combo-result-item {
@@ -763,13 +767,13 @@ a:hover {
     flex-direction: column;
     gap: 8px;
     font-size: 12px;
-}
 
-.combo-result-item:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
-    border-color: var(--gold-border-light);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15);
-    transform: translateY(-2px);
+    &:hover {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+        border-color: var(--gold-border-light);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15);
+        transform: translateY(-2px);
+    }
 }
 
 .item-header {
@@ -790,10 +794,10 @@ a:hover {
 
 .item-odds {
     color: var(--muted);
-}
 
-.item-odds strong {
-    color: var(--gold-bright);
+    & strong {
+        color: var(--gold-bright);
+    }
 }
 
 .item-footer {
@@ -806,20 +810,124 @@ a:hover {
 
 .item-return {
     color: var(--success);
-}
 
-.item-return strong {
-    color: #3ddc97;
+    & strong {
+        color: #3ddc97;
+    }
 }
 
 .item-profit {
     color: var(--muted);
+
+    & strong {
+        color: #f7e08a;
+    }
 }
 
-.item-profit strong {
-    color: #f7e08a;
+/* ============= 響應式設計 ============= */
+@media (max-width: 1200px) {
+    .calc-main-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .calc-input-panel {
+        position: static;
+    }
+
+    .results-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    .quad-grid {
+        gap: 10px;
+    }
+
+    .quad {
+        padding: 12px;
+    }
 }
 
+@media (max-width: 960px) {
+    .quad-grid,
+    .home-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    body {
+        overflow: auto;
+    }
+
+    .fixed-four {
+        height: auto;
+        min-height: calc(100vh - 76px);
+    }
+
+    .main-content {
+        overflow: visible;
+    }
+
+    .race-page {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .race-odds-inputs {
+        grid-template-columns: 1fr;
+    }
+
+    .results-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .results-grid {
+        grid-template-columns: 1fr;
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 640px) {
+    .calculator-page {
+        padding: 12px;
+    }
+
+    .calc-header h1 {
+        font-size: 24px;
+    }
+
+    .race-header {
+        flex-direction: column;
+        align-items: flex-start;
+
+        &-left,
+        &-right {
+            width: 100%;
+        }
+    }
+
+    .panel-title {
+        font-size: 16px;
+    }
+
+    .searchbar {
+        flex-direction: column;
+
+        & input,
+        & select,
+        & button {
+            width: 100%;
+        }
+    }
+
+    .home-layout {
+        grid-template-columns: 1fr;
+    }
+}
 /* 組合結果表格 */
 .results-table-wrapper {
     margin-top: 20px;
@@ -922,6 +1030,7 @@ a:hover {
     font-weight: 700;
 }
 
+/* 表格固定頭部滾動 */
 .combo-results-table::-webkit-scrollbar {
     width: 6px;
 }
@@ -938,71 +1047,8 @@ a:hover {
 .combo-results-table::-webkit-scrollbar-thumb:hover {
     background: rgba(212, 175, 55, 0.5);
 }
-@media (max-width: 1200px) {
-    .calc-main-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .calc-input-panel {
-        position: static;
-    }
-
-    .results-summary {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .results-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    }
-
-    .quad-grid {
-        gap: 10px;
-    }
-
-    .quad {
-        padding: 12px;
-    }
-}
-
-@media (max-width: 960px) {
-    .quad-grid,
-    .home-layout {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto;
-    }
-
-    body {
-        overflow: auto;
-    }
-
-    .fixed-four {
-        height: auto;
-        min-height: calc(100vh - 76px);
-    }
-
-    .main-content {
-        overflow: visible;
-    }
-
-    .race-page {
-        gap: 10px;
-    }
-}
 
 @media (max-width: 768px) {
-    .race-odds-inputs {
-        grid-template-columns: 1fr;
-    }
-
-    .results-summary {
-        grid-template-columns: 1fr;
-    }
-
-    .results-grid {
-        grid-template-columns: 1fr;
-        max-height: 400px;
-    }
-
     .combo-results-table th,
     .combo-results-table td {
         padding: 8px 6px;
@@ -1011,43 +1057,5 @@ a:hover {
 
     .combo-results-table tbody {
         max-height: 400px;
-    }
-}
-
-@media (max-width: 640px) {
-    .calculator-page {
-        padding: 12px;
-    }
-
-    .calc-header h1 {
-        font-size: 24px;
-    }
-
-    .race-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .race-head-left,
-    .race-head-right {
-        width: 100%;
-    }
-
-    .panel-title {
-        font-size: 16px;
-    }
-
-    .searchbar {
-        flex-direction: column;
-    }
-
-    .searchbar input,
-    .searchbar select,
-    .searchbar button {
-        width: 100%;
-    }
-
-    .home-layout {
-        grid-template-columns: 1fr;
     }
 }
