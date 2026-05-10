@@ -1,18 +1,13 @@
 import os
 import logging
-
-import requests
-from bs4 import BeautifulSoup
 from flask import Flask, render_template, abort, request, redirect, url_for
 from flask_login import (
-    LoginManager,
-    UserMixin,
-    login_user,
-    login_required,
-    logout_user,
-    current_user,
+    LoginManager, UserMixin, login_user, login_required,
+    logout_user, current_user
 )
 from werkzeug.security import generate_password_hash, check_password_hash
+import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-me-please")
@@ -37,6 +32,19 @@ USERS = {
     "admin": generate_password_hash(os.environ.get("APP_PASSWORD", "admin123"))
 }
 
+
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    if user_id in USERS:
+        return User(user_id)
+    return None
+
+
 LOCAL_FALLBACK_RACES = [
     {"id": 1, "title": "Sha Tin R1 - Class 5 - 1200m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1200, "horses": [1, 2], "class": "Class 5", "time": "18:45"},
     {"id": 2, "title": "Sha Tin R2 - Class 4 - 1400m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1400, "horses": [3, 4], "class": "Class 4", "time": "19:15"},
@@ -53,47 +61,23 @@ LOCAL_FALLBACK_RACES = [
 
 LOCAL_FALLBACK_HORSES = {
     1: {
-        "id": 1,
-        "name": "嘉應高昇",
-        "trainer": "大衛希斯",
-        "trainer_id": "david_hayes",
-        "draw": "1",
-        "weight": "126",
-        "rating": "140",
-        "form": "1-1-1",
+        "id": 1, "name": "嘉應高昇", "trainer": "大衛希斯", "trainer_id": "david_hayes",
+        "draw": "1", "weight": "126", "rating": "140", "form": "1-1-1",
         "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2023_J062",
     },
     2: {
-        "id": 2,
-        "name": "浪漫勇士",
-        "trainer": "沈集成",
-        "trainer_id": "danny_shum",
-        "draw": "2",
-        "weight": "128",
-        "rating": "135",
-        "form": "1-2-1",
+        "id": 2, "name": "浪漫勇士", "trainer": "沈集成", "trainer_id": "danny_shum",
+        "draw": "2", "weight": "128", "rating": "135", "form": "1-2-1",
         "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2020_E486",
     },
     3: {
-        "id": 3,
-        "name": "燈胆將軍",
-        "trainer": "黎昭昇",
-        "trainer_id": "richard_lee",
-        "draw": "3",
-        "weight": "121",
-        "rating": "92",
-        "form": "2-3-1",
+        "id": 3, "name": "燈胆將軍", "trainer": "黎昭昇", "trainer_id": "richard_lee",
+        "draw": "3", "weight": "121", "rating": "92", "form": "2-3-1",
         "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2024_K218",
     },
     4: {
-        "id": 4,
-        "name": "美麗星晨",
-        "trainer": "告東尼",
-        "trainer_id": "tony_cruz",
-        "draw": "4",
-        "weight": "120",
-        "rating": "88",
-        "form": "4-2-2",
+        "id": 4, "name": "美麗星晨", "trainer": "告東尼", "trainer_id": "tony_cruz",
+        "draw": "4", "weight": "120", "rating": "88", "form": "4-2-2",
         "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2024_K491",
     },
 }
@@ -106,23 +90,12 @@ LOCAL_FALLBACK_TRAINERS = {
 }
 
 
-class User(UserMixin):
-    def __init__(self, username):
-        self.id = username
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    if user_id in USERS:
-        return User(user_id)
-    return None
-
-
 def slugify_trainer(name):
     return name.replace(" ", "_").replace(".", "_").replace("/", "_").replace("-", "_").strip("_")
 
 
 def make_dummy_race(race_id):
+    horse_ids = [1, 2, 3, 4]
     if race_id % 4 == 1:
         horse_ids = [1, 2]
     elif race_id % 4 == 2:
@@ -241,7 +214,7 @@ def load_real_data(racedate="", racecourse="", raceno=None):
         if parsed_races:
             return parsed_races, parsed_horses, parsed_trainers
     except Exception as e:
-        logger.exception("Live fetch failed, fallback used: %s", e)
+        logger.exception(f"Live fetch failed, fallback used: {e}")
 
     return LOCAL_FALLBACK_RACES, LOCAL_FALLBACK_HORSES, LOCAL_FALLBACK_TRAINERS
 
@@ -321,7 +294,7 @@ def fetch_external_page(url):
         body_text = soup.get_text("\n", strip=True)
         return {"ok": True, "title": title, "url": url, "body_text": body_text[:12000], "error": None}
     except Exception as e:
-        logger.exception("Failed to fetch external page: %s", e)
+        logger.exception(f"Failed to fetch external page: {e}")
         return {"ok": False, "title": "Fetch failed", "url": url, "body_text": "", "error": str(e)}
 
 

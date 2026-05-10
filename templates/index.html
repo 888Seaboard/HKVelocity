@@ -3,74 +3,72 @@
 
 {% block content %}
 <div class="home-layout">
-    <div class="home-left">
-        <div class="page-title">賽事列表</div>
+    <section class="home-left">
+        <div class="page-title">Race Overview</div>
 
-        <form method="get" action="/" class="searchbar">
-            <input type="text" name="q" placeholder="Search race..." value="{{ q }}">
-            <select name="course">
-                <option value="">All Courses</option>
-                {% for c in courses %}
-                <option value="{{ c }}" {% if course == c %}selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-            </select>
-            <select name="sort">
-                <option value="id" {% if sort == "id" %}selected{% endif %}>Sort by ID</option>
-                <option value="date" {% if sort == "date" %}selected{% endif %}>Sort by Date</option>
-                <option value="distance" {% if sort == "distance" %}selected{% endif %}>Sort by Distance</option>
-            </select>
-            <button type="submit">Search</button>
-        </form>
+        <div class="searchbar">
+            <form method="get" action="{{ url_for('home') }}" class="searchbar">
+                <input type="text" name="q" value="{{ q }}" placeholder="Search race / course">
+                <select name="course">
+                    <option value="">All Courses</option>
+                    {% for c in courses %}
+                    <option value="{{ c }}" {% if course == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+                <select name="sort">
+                    <option value="id" {% if sort == 'id' %}selected{% endif %}>Sort by Race No</option>
+                    <option value="date" {% if sort == 'date' %}selected{% endif %}>Sort by Date</option>
+                    <option value="distance" {% if sort == 'distance' %}selected{% endif %}>Sort by Distance</option>
+                </select>
+                <button type="submit">Search</button>
+            </form>
+        </div>
 
         <div class="table-wrap">
             <table class="list-table">
                 <thead>
                     <tr>
-                        <th style="width: 70px;">場次</th>
-                        <th>賽事</th>
-                        <th style="width: 140px;">賽道</th>
-                        <th style="width: 120px;">日期</th>
-                        <th style="width: 100px;">距離</th>
-                        <th style="width: 90px;">內容</th>
+                        <th>Race</th>
+                        <th>Class</th>
+                        <th>Course</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Distance</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% if races and races|length > 0 %}
-                        {% for race in races %}
-                        <tr>
-                            <td>{{ race.id }}</td>
-                            <td class="wrap">
-                                <a href="{{ url_for('race_detail', race_id=race.id) }}">{{ race.title }}</a>
-                            </td>
-                            <td class="wrap">{{ race.course }}</td>
-                            <td>{{ race.date }}</td>
-                            <td>{{ race.distance }}m</td>
-                            <td><a href="{{ url_for('race_detail', race_id=race.id) }}">View</a></td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        {% for n in range(1, 12) %}
-                        <tr>
-                            <td>{{ n }}</td>
-                            <td class="wrap">
-                                <a href="{{ url_for('race_detail', race_id=n) }}">Race {{ n }} - Dummy Data</a>
-                            </td>
-                            <td class="wrap">Sha Tin</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td><a href="{{ url_for('race_detail', race_id=n) }}">View</a></td>
-                        </tr>
-                        {% endfor %}
-                    {% endif %}
+                    {% for r in races %}
+                    <tr>
+                        <td><a href="{{ url_for('race_detail', race_id=r.id) }}">R{{ r.id }}</a></td>
+                        <td>{{ r.class }}</td>
+                        <td>{{ r.course }}</td>
+                        <td>{{ r.date }}</td>
+                        <td>{{ r.time }}</td>
+                        <td>{{ r.distance }}m</td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
-    </div>
+    </section>
 
-    <div class="home-right">
+    <aside class="home-right">
         <div class="quad">
-            <div class="panel-title">賽日跑道特點</div>
+            <div class="panel-title">Featured Horses</div>
+            <div class="detail-list">
+                {% for horse in featured_horses %}
+                <div class="detail-row">
+                    <span>{{ horse.name }}</span>
+                    <div>
+                        <a href="{{ url_for('horse_detail', horse_id=horse.id) }}">Open</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
 
+        <div class="quad">
+            <div class="panel-title">Track Notes</div>
             <div class="detail-list">
                 {% for label, value in race_track_notes %}
                 <div class="detail-row">
@@ -80,19 +78,6 @@
                 {% endfor %}
             </div>
         </div>
-
-        <div class="quad" style="margin-top: 16px;">
-            <div class="panel-title">重點馬匹</div>
-
-            <div class="detail-list">
-                {% for horse in featured_horses %}
-                <div class="detail-row">
-                    <span>{{ horse.name }}</span>
-                    <div><a href="{{ horse.official_link }}" target="_blank" rel="noopener noreferrer">HKJC</a></div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
+    </aside>
 </div>
 {% endblock %}
