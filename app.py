@@ -8,7 +8,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from playwright.sync_api import sync_playwright
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static') # 強制指定 static 資料夾)
 app.secret_key = os.environ.get("SECRET_KEY", "change-me-please")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
