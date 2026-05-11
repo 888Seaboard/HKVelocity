@@ -336,52 +336,55 @@ def home():
 def race_detail(race_id):
     if 'race_buttons' not in session:
         update_race_buttons_session()
-    
-    race_buttons = session['race_buttons']
-    
-    # 🔥 抓真實單場數據
+
+    race_buttons = session.get('race_buttons', {})
+
     races_real, horses_real, trainers_real = load_real_data(
         racedate="2026/05/13", racecourse="HV", raceno=race_id, use_real=True
     )
-    
-    if races_real:  # 🔥 有真實數據
+
+    if races_real:
         race = races_real[0]
-        race_horses = list(horses_real.values())  # 🔥 dict.values() → list of dicts
+        race_horses = list(horses_real.values())
         race_trainers = list(trainers_real.values())
-        
-        # 🔥 修正summary
+
         summary = {
-            "race_no": race.get('id', race_id),
-            "title": race.get('title', f'R{race_id}'),
-            "class": race.get('class', '第四班'),
-            "course": race.get('course', 'HV'),
-            "date": race.get('date', '2026/05/13'),
-            "time": race.get('time', '19:10'),
-            "distance": race.get('distance', 1200),
-            "horse_count": len(race_horses),
-            "trainer_count": len(race_trainers)
+            "race_no": f"第 {race_id} 場",
+            "class": race.get("class", ""),
+            "course": race.get("course", ""),
+            "date": race.get("date", ""),
+            "time": race.get("time", ""),
+            "distance": f"{race.get('distance', '')}米",
+            "title": race.get("title", "").split("-", 1)[-1].strip(),
+            "prize": f"獎金: {race.get('prize', '')}",
+            "rating": f"評分: {race.get('rating', '')}",
         }
+
         active_detail = {
-            "type": "race", "title": race['title'],
-            "rows": [("場次", f"R{race_id}"), ("賽事", race['title'])]
+            "type": "race",
+            "title": race["title"],
+            "rows": [
+                ("場次", f"R{race_id}"),
+                ("賽事", race["title"]),
+            ],
         }
-    else:  # 🔥 fallback
+    else:
         race, fallback_horses, fallback_trainers = make_dummy_race(race_id)
         race_horses, race_trainers, summary, active_detail = build_race_detail(
             race, fallback_horses, fallback_trainers
         )
-    
+
     return render_template(
         "race.html",
         race=race,
-        race_horses=race_horses,      # 🔥 現在是list of dicts
+        race_horses=race_horses,
         race_trainers=race_trainers,
         summary=summary,
-        quick_races=[], 
+        quick_races=[],
         active_detail=active_detail,
         topbar_links=TOPBAR_LINKS,
         race_buttons=race_buttons,
-        current_race=race_id
+        current_race=race_id,
     )
 
 def update_race_buttons_session():
@@ -611,71 +614,90 @@ def hkjc_proxy():
     return redirect(target_url)
 
 def parse_racecard_page(html, racedate="2026/05/13", racecourse="HV", raceno=None):
-    """從HKJC HTML完美提取賽事+馬匹資料"""
     soup = BeautifulSoup(html, "html.parser")
-    
-    # 🔥 賽事標題
-    race_info_div = soup.find('div', class_='f_fs13', style='line-height: 20px;')
+
+    race_info_div = soup.find("div", class_="f_fs13", style="line-height: 20px;")
     race_title = f"第 {raceno} 場"
+    race_class = ""
+    distance = 1200
+    prize = ""
+    rating = ""
+
     if race_info_div:
-        race_text = race_info_div.get_text()
-        match = re.search(r'第\s*(\d+)\s*場\s*[-\s]*(.+?)(?=\n|$)', race_text)
+        race_text = race_info_div.get_text(" ", strip=True)
+        match = re.search(r"第\s*(\d+)\s*場\s*-\s*(.+)", race_text)
         if match:
             race_title = f"第 {raceno} 場 - {match.group(2).strip()}"
-    
-    # 🔥 馬匹表格
+
+        m2 = re.search(r"(\d+)米", race_text)
+        if m2:
+            distance = int(m2.group(1))
+
+        m3 = re.search(r"獎金:\s*([^\s]+(?:\s?[^\s]+)*)", race_text)
+        if m3:
+            prize = m3.group(1).strip()
+
+        m4 = re.search(r"評分:\s*([0-9\-]+)", race_text)
+        if m4:
+            rating = m4.group(1).strip()
+
+        m5 = re.search(r"(第四班|第三班|第二班|第一班)", race_text)
+        if m5:
+            race_class = m5.group(1)
+
     races = [{
         "id": int(raceno),
         "title": race_title,
         "date": racedate,
         "course": racecourse,
-        "distance": 1200,
-        "horses": [],
-        "class": "第四班",
-        "time": "19:10",
-        "prize": "$1,170,000",
-        "rating": "60-40",
-        "track": '"C+3" 賽道'
+        "distance": distance,
+        "class": race_class,
+        "prize": prize,
+        "rating": rating,
+        "horses": []
     }]
-    
-    table = soup.find('table', class_='starter')
+
+    parsed_horses = {}
+    parsed_trainers = {}
+
+    table = soup.find("table", class_="starter")
     if table:
-        rows = table.find('tbody').find_all('tr')
+        rows = table.find("tbody").find_all("tr")
         horse_id = 1
-        parsed_horses = {}
-        parsed_trainers = {}
-        
+
         for row in rows:
-            cols = row.find_all(['td'])
-            if len(cols) < 15: continue
-            
-            horse_no = cols[0].get_text(strip=True)
-            form = cols[1].get_text(strip=True)
-            silk_img = cols[2].img['src'] if cols[2].find('img') else ""
+            cols = row.find_all("td")
+            if len(cols) < 15:
+                continue
+
             horse_name = cols[3].get_text(strip=True)
             weight = cols[5].get_text(strip=True)
             jockey = cols[6].get_text(strip=True)
             draw = cols[8].get_text(strip=True)
             trainer = cols[9].get_text(strip=True)
             rating = cols[11].get_text(strip=True)
-            rating_change = cols[12].get_text(strip=True)
-            body_weight = cols[13].get_text(strip=True)
-            gear = cols[-1].get_text(strip=True)
-            
+            form = cols[1].get_text(strip=True)
+
             trainer_id = slugify_trainer(trainer)
             parsed_horses[horse_id] = {
-                "id": horse_id, "no": horse_no, "name": horse_name, "silk": silk_img,
-                "weight": weight, "jockey": jockey, "draw": draw, "trainer": trainer,
-                "trainer_id": trainer_id, "rating": rating, "rating_change": rating_change,
-                "body_weight": body_weight, "form": form, "gear": gear
+                "id": horse_id,
+                "name": horse_name,
+                "weight": weight,
+                "jockey": jockey,
+                "draw": draw,
+                "trainer": trainer,
+                "trainer_id": trainer_id,
+                "rating": rating,
+                "form": form,
+                "official_link": ""
             }
-            
+
             if trainer_id not in parsed_trainers:
                 parsed_trainers[trainer_id] = {"name": trainer, "horses": []}
             parsed_trainers[trainer_id]["horses"].append(horse_id)
             races[0]["horses"].append(horse_id)
             horse_id += 1
-    
+
     return races, parsed_horses, parsed_trainers
 
 

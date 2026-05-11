@@ -4,13 +4,14 @@
 {% block content %}
 <div class="race-page fixed-four">
     <div class="race-header">
-        <div class="race-head-left">
-            <span class="info-item">Race {{ summary.race_no if summary else '-' }}</span>
-            <span class="info-item">{{ summary.class if summary else '' }}</span>
-            <span class="info-item">{{ summary.course if summary else '' }}</span>
-            <span class="info-item">{{ summary.date if summary else '' }}</span>
-            <span class="info-item">{{ summary.time if summary else '' }}</span>
-        </div>
+<div class="race-head-left">
+    <span class="info-item">{{ summary.race_no }}</span>
+    <span class="info-item">{{ summary.class }}</span>
+    <span class="info-item">{{ summary.distance }}</span>
+    <span class="info-item">{{ summary.title }}</span>
+    <span class="info-item">{{ summary.prize }}</span>
+    <span class="info-item">{{ summary.rating }}</span>
+</div>
 
         <div class="race-head-right">
             <a href="{{ url_for('home') }}">主頁
