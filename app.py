@@ -2,13 +2,16 @@ import os
 import logging
 import threading
 import requests
+import re
+import json
+import datetime
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, abort, request, redirect, url_for, Response
+from flask import Flask, render_template, abort, request, redirect, url_for, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from playwright.sync_api import sync_playwright
 
-app = Flask(__name__, static_folder='static') # 強制指定 static 資料夾)
+app = Flask(__name__, static_folder='static')
 app.secret_key = os.environ.get("SECRET_KEY", "change-me-please")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,7 +20,7 @@ login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
 
-BASE_RACECARD_URL = "https://racing.hkjc.com/en-us/local/information/racecard"
+BASE_RACECARD_URL = "https://racing.hkjc.com/zh-hk/local/information/racecard"
 CHROME_CDP_URL = os.environ.get("CHROME_CDP_URL", "http://chrome:9222")
 
 TOPBAR_LINKS = [
@@ -31,20 +34,7 @@ USERS = {
     "toveythuang": generate_password_hash(os.environ.get("APP_PASSWORD", "HongKong852!"))
 }
 
-LOCAL_FALLBACK_RACES = [
-    {"id": 1, "title": "Sha Tin R1 - Class 5 - 1200m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1200, "horses": [1, 2], "class": "Class 5", "time": "18:45"},
-    {"id": 2, "title": "Sha Tin R2 - Class 4 - 1400m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1400, "horses": [3, 4], "class": "Class 4", "time": "19:15"},
-    {"id": 3, "title": "Sha Tin R3 - Class 4 - 1600m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1600, "horses": [1, 3], "class": "Class 4", "time": "19:50"},
-    {"id": 4, "title": "Sha Tin R4 - Class 3 - 1400m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1400, "horses": [2, 4], "class": "Class 3", "time": "20:20"},
-    {"id": 5, "title": "Sha Tin R5 - Class 3 - 1800m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1800, "horses": [1, 4], "class": "Class 3", "time": "20:50"},
-    {"id": 6, "title": "Sha Tin R6 - Class 2 - 1200m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1200, "horses": [2, 3], "class": "Class 2", "time": "21:20"},
-    {"id": 7, "title": "Sha Tin R7 - Class 2 - 1600m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1600, "horses": [1, 2, 3], "class": "Class 2", "time": "21:50"},
-    {"id": 8, "title": "Sha Tin R8 - Class 2 - 1400m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1400, "horses": [4], "class": "Class 2", "time": "22:20"},
-    {"id": 9, "title": "Sha Tin R9 - Class 1 - 1200m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1200, "horses": [1], "class": "Class 1", "time": "22:50"},
-    {"id": 10, "title": "Sha Tin R10 - Class 1 - 1600m", "date": "2026-05-10", "course": "Sha Tin", "distance": 1600, "horses": [2], "class": "Class 1", "time": "23:20"},
-    {"id": 11, "title": "Sha Tin R11 - Class 1 - 2000m", "date": "2026-05-10", "course": "Sha Tin", "distance": 2000, "horses": [3, 4], "class": "Class 1", "time": "23:50"},
-]
-
+# Fallback 數據（當 config.json 不存在時使用）
 LOCAL_FALLBACK_HORSES = {
     1: {"id": 1, "name": "嘉應高昇", "trainer": "大衛希斯", "trainer_id": "david_hayes", "draw": "1", "weight": "126", "rating": "140", "form": "1-1-1", "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2023_J062"},
     2: {"id": 2, "name": "浪漫勇士", "trainer": "沈集成", "trainer_id": "danny_shum", "draw": "2", "weight": "128", "rating": "135", "form": "1-2-1", "official_link": "https://racing.hkjc.com/zh-hk/local/information/horse?horseid=HK_2020_E486"},
@@ -59,129 +49,143 @@ LOCAL_FALLBACK_TRAINERS = {
     "tony_cruz": {"name": "告東尼", "horses": [4]},
 }
 
+
 class User(UserMixin):
     def __init__(self, username):
         self.id = username
+
 
 @login_manager.user_loader
 def load_user(user_id):
     return User(user_id) if user_id in USERS else None
 
+
 def slugify_trainer(name):
-    return name.replace(" ", "_").replace(".", "_").replace("/", "_").replace("-", "_").strip("_")
+    return re.sub(r'[^\w\s-]', '_', name.replace(" ", "_").strip("_"))
+
+
+# ======================== Config 管理 ========================
+
+def load_config():
+    """讀取 config.json 文件"""
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logger.warning("config.json not found, using default config")
+        return get_default_config()
+    except Exception as e:
+        logger.error(f"Failed to load config: {e}")
+        return get_default_config()
+
+
+def get_default_config():
+    """返回默認配置"""
+    return {
+        "racedate": datetime.date.today().strftime("%Y/%m/%d"),
+        "racecourse": "ST",
+        "races": [
+            {
+                "race_no": i,
+                "title": f"R{i}",
+                "class": "Class 4",
+                "time": f"{18 + i // 2}:{(i * 15) % 60:02d}",
+                "distance": 1200 + (i % 3) * 200
+            }
+            for i in range(1, 12)
+        ]
+    }
+
+
+def save_config(config):
+    """保存配置到 config.json"""
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+        logger.info(f"✅ Config saved to {config_path}")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Failed to save config: {e}")
+        return False
+
+
+# ======================== 數據加載 ========================
+
+def load_real_data(racedate="", racecourse=""):
+    """
+    從 config.json 讀取賽事數據
+    
+    Args:
+        racedate: 格式 "YYYY/MM/DD" 或 "YYYY-MM-DD"（可選，不提供時用 config 的值）
+        racecourse: 賽馬場代碼，如 "ST", "HV"（可選，不提供時用 config 的值）
+    
+    Returns:
+        (races_data, all_horses, all_trainers)
+    """
+    config = load_config()
+    
+    # 使用提供的參數或 config 的默認值
+    racedate = racedate or config.get("racedate", datetime.date.today().strftime("%Y/%m/%d"))
+    racecourse = racecourse or config.get("racecourse", "ST")
+    
+    # 規范化日期格式：2026-05-10 → 2026/05/10
+    if "-" in racedate:
+        racedate = racedate.replace("-", "/")
+    
+    races_data = []
+    
+    # 從 config.json 構建賽事列表
+    for race_config in config.get("races", []):
+        race_no = race_config.get("race_no", 1)
+        
+        # 生成 HKJC 直連 URL
+        hkjc_url = f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={racedate}&Racecourse={racecourse}&RaceNo={race_no}"
+        
+        race = {
+            "id": race_no,
+            "title": race_config.get("title", f"R{race_no}"),
+            "class": race_config.get("class", "Class 4"),
+            "time": race_config.get("time", "TBA"),
+            "distance": race_config.get("distance", 1200),
+            "date": racedate.replace("/", "-"),  # 轉回 YYYY-MM-DD 格式用於顯示
+            "course": racecourse,
+            "horses": race_config.get("horses", []),  # 從 config 讀取馬匹 ID
+            "hkjc_url": hkjc_url
+        }
+        
+        races_data.append(race)
+    
+    # 使用 fallback horses 和 trainers
+    all_horses = LOCAL_FALLBACK_HORSES
+    all_trainers = LOCAL_FALLBACK_TRAINERS
+    
+    logger.info(f"✅ Loaded {len(races_data)} races from config")
+    return races_data, all_horses, all_trainers
+
 
 def make_dummy_race(race_id):
+    """生成虛擬賽事數據（當無法從列表中找到時）"""
     horse_ids = [1, 2] if race_id % 4 == 1 else [2, 3] if race_id % 4 == 2 else [3, 4] if race_id % 4 == 3 else [1, 4]
     race = {
         "id": race_id,
         "title": f"Race {race_id} - Dummy Data",
         "date": "2026-05-10",
-        "course": "Sha Tin",
+        "course": "ST",
         "distance": 1200 + (race_id % 4) * 200,
         "horses": horse_ids,
         "class": f"Class {5 - (race_id % 4)}",
         "time": f"{18 + race_id:02d}:45",
+        "hkjc_url": ""
     }
     return race, LOCAL_FALLBACK_HORSES, LOCAL_FALLBACK_TRAINERS
 
-def parse_racecard_page(html, racedate="", racecourse="", raceno=None):
-    soup = BeautifulSoup(html, "html.parser")
-    title = soup.title.get_text(" ", strip=True) if soup.title else "HKJC Race Card"
-    parsed_races, parsed_horses, parsed_trainers = [], {}, {}
-    horse_id = 1
 
-    for table in soup.find_all("table"):
-        headers = [th.get_text(" ", strip=True) for th in table.find_all("th")]
-        rows = table.find_all("tr")
-        if not headers or len(rows) < 2:
-            continue
-
-        header_join = " | ".join(h.lower() for h in headers)
-        if not any(key in header_join for key in ["horse", "trainer", "draw", "rtg", "wt", "weight"]):
-            continue
-
-        header_map = {h.lower(): i for i, h in enumerate(headers)}
-
-        def find_idx(keys, default=None):
-            for k in keys:
-                if k in header_map:
-                    return header_map[k]
-            return default
-
-        idx_draw = find_idx(["draw", "d"])
-        idx_horse = find_idx(["horse", "horse name", "name"], 1)
-        idx_weight = find_idx(["wt", "weight", "wgt"])
-        idx_rating = find_idx(["rtg", "rating"])
-        idx_trainer = find_idx(["trainer", "tr."])
-        idx_form = find_idx(["form", "frm"])
-
-        if not parsed_races:
-            race_id = int(raceno) if raceno else 1
-            parsed_races.append({
-                "id": race_id,
-                "title": title,
-                "date": racedate,
-                "course": racecourse,
-                "distance": "",
-                "horses": [],
-                "class": "",
-                "time": "",
-            })
-
-        for tr in rows[1:]:
-            cols = [td.get_text(" ", strip=True) for td in tr.find_all(["td", "th"])]
-            if len(cols) < 2:
-                continue
-
-            horse_name = cols[idx_horse] if idx_horse is not None and idx_horse < len(cols) else cols[1]
-            draw = cols[idx_draw] if idx_draw is not None and idx_draw < len(cols) else (cols[0] if len(cols) > 0 else "")
-            weight = cols[idx_weight] if idx_weight is not None and idx_weight < len(cols) else ""
-            rating = cols[idx_rating] if idx_rating is not None and idx_rating < len(cols) else ""
-            trainer = cols[idx_trainer] if idx_trainer is not None and idx_trainer < len(cols) else ""
-            form = cols[idx_form] if idx_form is not None and idx_form < len(cols) else ""
-
-            trainer_id = slugify_trainer(trainer) if trainer else "unknown_trainer"
-            if trainer_id not in parsed_trainers:
-                parsed_trainers[trainer_id] = {"name": trainer or "Unknown", "horses": []}
-
-            parsed_horses[horse_id] = {
-                "id": horse_id,
-                "name": horse_name,
-                "trainer": trainer or "Unknown",
-                "trainer_id": trainer_id,
-                "draw": draw,
-                "weight": weight,
-                "rating": rating,
-                "form": form,
-                "official_link": BASE_RACECARD_URL,
-            }
-            parsed_trainers[trainer_id]["horses"].append(horse_id)
-            parsed_races[0]["horses"].append(horse_id)
-            horse_id += 1
-
-    return parsed_races, parsed_horses, parsed_trainers
-
-def load_real_data(racedate="", racecourse="", raceno=None):
-    params = {}
-    if racedate:
-        params["racedate"] = racedate
-    if racecourse:
-        params["Racecourse"] = racecourse
-    if raceno:
-        params["RaceNo"] = raceno
-
-    try:
-        resp = requests.get(BASE_RACECARD_URL, params=params, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
-        resp.raise_for_status()
-        parsed_races, parsed_horses, parsed_trainers = parse_racecard_page(resp.text, racedate=racedate, racecourse=racecourse, raceno=raceno)
-        if parsed_races:
-            return parsed_races, parsed_horses, parsed_trainers
-    except Exception as e:
-        logger.exception("Live fetch failed, fallback used: %s", e)
-
-    return LOCAL_FALLBACK_RACES, LOCAL_FALLBACK_HORSES, LOCAL_FALLBACK_TRAINERS
+# ======================== 數據轉換 ========================
 
 def build_race_detail(race, horses_map, trainers_map):
+    """構建賽事詳情"""
     race_horses = [horses_map[h_id] for h_id in race.get("horses", []) if h_id in horses_map]
     race_trainers = []
     seen = set()
@@ -201,7 +205,7 @@ def build_race_detail(race, horses_map, trainers_map):
             ("Course", race.get("course", "")),
             ("Date", race.get("date", "")),
             ("Time", race.get("time", "")),
-            ("Distance", f"{race.get('distance', '')}"),
+            ("Distance", f"{race.get('distance', '')}m"),
             ("Horses", str(len(race_horses))),
             ("Trainers", str(len(race_trainers))),
         ],
@@ -219,7 +223,9 @@ def build_race_detail(race, horses_map, trainers_map):
     }
     return race_horses, race_trainers, summary, active_detail
 
+
 def build_horse_detail(horse):
+    """構建馬匹詳情"""
     return {
         "type": "horse",
         "title": horse.get("name", ""),
@@ -233,7 +239,9 @@ def build_horse_detail(horse):
         ],
     }
 
+
 def build_trainer_detail(trainer, trainer_horses):
+    """構建練馬師詳情"""
     return {
         "type": "trainer",
         "title": trainer.get("name", ""),
@@ -244,7 +252,9 @@ def build_trainer_detail(trainer, trainer_horses):
         ],
     }
 
+
 def fetch_external_page(url):
+    """抓取外部頁面內容"""
     try:
         resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
         resp.raise_for_status()
@@ -256,7 +266,9 @@ def fetch_external_page(url):
         logger.exception("Failed to fetch external page: %s", e)
         return {"ok": False, "title": "Fetch failed", "url": url, "body_text": "", "error": str(e)}
 
+
 def open_remote_chrome(url: str):
+    """打開遠程 Chrome 實例"""
     try:
         with sync_playwright() as p:
             browser = p.chromium.connect_over_cdp(CHROME_CDP_URL)
@@ -265,6 +277,9 @@ def open_remote_chrome(url: str):
             page.goto(url, wait_until="domcontentloaded")
     except Exception as e:
         logger.exception("Failed to open remote chrome: %s", e)
+
+
+# ======================== 路由 ========================
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -280,19 +295,28 @@ def login():
         error = "帳號或密碼錯誤"
     return render_template("login.html", error=error)
 
+
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
     return redirect(url_for("login"))
 
+
 @app.route("/")
 @login_required
 def home():
-    races_data, horses_data, trainers_data = load_real_data()
+    # 獲取查詢參數
     q = request.args.get("q", "").strip().lower()
     course = request.args.get("course", "").strip()
     sort = request.args.get("sort", "id")
+    racedate = request.args.get("racedate", "").strip()
+    racecourse = request.args.get("racecourse", "").strip()
+    
+    races_data, horses_data, trainers_data = load_real_data(
+        racedate=racedate, 
+        racecourse=racecourse
+    )
 
     filtered = races_data[:]
     if q:
@@ -302,7 +326,7 @@ def home():
     if sort == "date":
         filtered = sorted(filtered, key=lambda x: x.get("date", ""))
     elif sort == "distance":
-        filtered = sorted(filtered, key=lambda x: x.get("distance", ""))
+        filtered = sorted(filtered, key=lambda x: x.get("distance", 0))
     else:
         filtered = sorted(filtered, key=lambda x: x.get("id", 0))
 
@@ -326,6 +350,7 @@ def home():
         race_track_notes=race_track_notes,
         topbar_links=TOPBAR_LINKS,
     )
+
 
 @app.route("/race/<int:race_id>")
 @login_required
@@ -354,6 +379,7 @@ def race_detail(race_id):
         right_panel=None,
         browser_url="",
     )
+
 
 @app.route("/open-link")
 @login_required
@@ -387,6 +413,7 @@ def open_link():
         right_panel=None,
         browser_url=url,
     )
+
 
 @app.route("/open-topbar")
 @login_required
@@ -424,6 +451,7 @@ def open_topbar_link():
         browser_url=proxy_url,
     )
 
+
 @app.route("/open-browser")
 @login_required
 def open_browser():
@@ -456,6 +484,7 @@ def open_browser():
         browser_url=proxy_url,
     )
 
+
 @app.route("/horse/<int:horse_id>")
 @login_required
 def horse_detail(horse_id):
@@ -484,6 +513,7 @@ def horse_detail(horse_id):
         right_panel=None,
         browser_url="",
     )
+
 
 @app.route("/trainer/<trainer_id>")
 @login_required
@@ -516,26 +546,46 @@ def trainer_detail(trainer_id):
         browser_url="",
     )
 
+
 @app.route("/calculator")
 @login_required
 def calculator():
     return render_template("calculator.html")
 
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template("404.html", topbar_links=TOPBAR_LINKS), 404
+
+@app.route("/admin/config", methods=["GET", "POST"])
+@login_required
+def edit_config():
+    """管理員配置編輯頁面"""
+    if request.method == "POST":
+        try:
+            config = request.get_json()
+            if save_config(config):
+                return jsonify({"status": "success", "message": "Config saved successfully"})
+            else:
+                return jsonify({"status": "error", "message": "Failed to save config"}), 500
+        except Exception as e:
+            logger.error(f"Error saving config: {e}")
+            return jsonify({"status": "error", "message": str(e)}), 400
+    
+    config = load_config()
+    return render_template("admin_config.html", config=config)
+
 
 @app.route("/proxy")
 @login_required
 def hkjc_proxy():
-    # This captures the 'url' parameter from the query string
+    """代理路由"""
     target_url = request.args.get("url")
     if not target_url:
         return "No URL provided", 400
-    
-    # For a simple fix, we redirect to the actual HKJC site
-    # Or you could return an iframe-friendly response
     return redirect(target_url)
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html", topbar_links=TOPBAR_LINKS), 404
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
