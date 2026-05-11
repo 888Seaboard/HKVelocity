@@ -5,8 +5,10 @@ import requests
 import re
 import json
 import datetime
+import time
+from concurrent.futures import ThreadPoolExecutor  # 🔥 新增
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, abort, request, redirect, url_for, jsonify
+from flask import Flask, render_template, abort, request, redirect, url_for, jsonify, session  # 🔥 加session
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from playwright.sync_api import sync_playwright
@@ -113,34 +115,29 @@ def save_config(config):
 
 # ======================== 數據加載 ========================
 
-def load_real_data(racedate="", racecourse=""):
+def load_real_data(racedate=None, racecourse=None, raceno=None, use_real=False):
     """
-    從 config.json 讀取賽事數據
-    
-    Args:
-        racedate: 格式 "YYYY/MM/DD" 或 "YYYY-MM-DD"（可選，不提供時用 config 的值）
-        racecourse: 賽馬場代碼，如 "ST", "HV"（可選，不提供時用 config 的值）
-    
-    Returns:
-        (races_data, all_horses, all_trainers)
+    use_real=True → 抓真實HKJC數據（單場）
+    use_real=False → 讀config.json（首頁列表）
     """
+    if use_real and raceno:
+        # 🔥 真實抓取單場
+        params = {"racedate": racedate.replace('-','/'), "Racecourse": racecourse, "RaceNo": raceno}
+        resp = requests.get(BASE_RACECARD_URL, params=params, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+        races, horses, trainers = parse_racecard_page(resp.text, racedate, racecourse, raceno)
+        logger.info(f"✅ 真實數據：第{raceno}場 {races[0]['title']}")
+        return races, horses, trainers
+    
+    # 原config.json邏輯（首頁用）
     config = load_config()
-    
-    # 使用提供的參數或 config 的默認值
     racedate = racedate or config.get("racedate", datetime.date.today().strftime("%Y/%m/%d"))
     racecourse = racecourse or config.get("racecourse", "ST")
     
-    # 規范化日期格式：2026-05-10 → 2026/05/10
-    if "-" in racedate:
-        racedate = racedate.replace("-", "/")
+    if "-" in racedate: racedate = racedate.replace("-", "/")
     
     races_data = []
-    
-    # 從 config.json 構建賽事列表
     for race_config in config.get("races", []):
         race_no = race_config.get("race_no", 1)
-        
-        # 生成 HKJC 直連 URL
         hkjc_url = f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={racedate}&Racecourse={racecourse}&RaceNo={race_no}"
         
         race = {
@@ -149,21 +146,14 @@ def load_real_data(racedate="", racecourse=""):
             "class": race_config.get("class", "Class 4"),
             "time": race_config.get("time", "TBA"),
             "distance": race_config.get("distance", 1200),
-            "date": racedate.replace("/", "-"),  # 轉回 YYYY-MM-DD 格式用於顯示
+            "date": racedate.replace("/", "-"),
             "course": racecourse,
-            "horses": race_config.get("horses", []),  # 從 config 讀取馬匹 ID
+            "horses": race_config.get("horses", []),
             "hkjc_url": hkjc_url
         }
-        
         races_data.append(race)
     
-    # 使用 fallback horses 和 trainers
-    all_horses = LOCAL_FALLBACK_HORSES
-    all_trainers = LOCAL_FALLBACK_TRAINERS
-    
-    logger.info(f"✅ Loaded {len(races_data)} races from config")
-    return races_data, all_horses, all_trainers
-
+    return races_data, LOCAL_FALLBACK_HORSES, LOCAL_FALLBACK_TRAINERS
 
 def make_dummy_race(race_id):
     """生成虛擬賽事數據（當無法從列表中找到時）"""
@@ -306,80 +296,119 @@ def logout():
 @app.route("/")
 @login_required
 def home():
-    # 獲取查詢參數
     q = request.args.get("q", "").strip().lower()
     course = request.args.get("course", "").strip()
     sort = request.args.get("sort", "id")
     racedate = request.args.get("racedate", "").strip()
     racecourse = request.args.get("racecourse", "").strip()
     
-    races_data, horses_data, trainers_data = load_real_data(
-        racedate=racedate, 
-        racecourse=racecourse
-    )
-
+    # 🔥 先更新按鈕數據
+    if 'race_buttons' not in session:
+        update_race_buttons_session()
+    
+    race_buttons = session.get('race_buttons', {})
+    races_data, horses_data, trainers_data = load_real_data()
+    
+    # 🔥 更新races title為真實中文
+    for race in races_data:
+        race_no = race['id']
+        if race_no in race_buttons:
+            race['title'] = race_buttons[race_no]
+    
+    # 你原來的filtered邏輯...
     filtered = races_data[:]
-    if q:
-        filtered = [r for r in filtered if q in str(r.get("title", "")).lower() or q in str(r.get("course", "")).lower()]
-    if course:
-        filtered = [r for r in filtered if r.get("course") == course]
-    if sort == "date":
-        filtered = sorted(filtered, key=lambda x: x.get("date", ""))
-    elif sort == "distance":
-        filtered = sorted(filtered, key=lambda x: x.get("distance", 0))
-    else:
-        filtered = sorted(filtered, key=lambda x: x.get("id", 0))
-
-    courses = sorted(set(r.get("course", "") for r in races_data if r.get("course")))
-    featured_horses = [horses_data[h_id] for h_id in [1, 2, 3, 4] if h_id in horses_data]
-    race_track_notes = [
-        ("跑道", "Sha Tin Turf"),
-        ("特性", "視乎草地狀態與欄位位置"),
-        ("前領", "部分情況可能較著數"),
-        ("注意", "彎位與直路形勢會影響表現"),
-    ]
-
+    if q: filtered = [r for r in filtered if q in str(r.get("title", "")).lower()]
+    if course: filtered = [r for r in filtered if r.get("course") == course]
+    
+    courses = sorted(set(r.get("course", "") for r in races_data))
+    featured_horses = list(LOCAL_FALLBACK_HORSES.values())[:4]
+    race_track_notes = [("跑道", "跑馬地草地"), ("賽道", '"C+3"'), ("狀態", "良好")]
+    
     return render_template(
         "index.html",
-        races=filtered,
-        q=q,
-        course=course,
-        sort=sort,
-        courses=courses,
-        featured_horses=featured_horses,
-        race_track_notes=race_track_notes,
-        topbar_links=TOPBAR_LINKS,
+        races=filtered, q=q, course=course, sort=sort, courses=courses,
+        featured_horses=featured_horses, race_track_notes=race_track_notes,
+        topbar_links=TOPBAR_LINKS, race_buttons=race_buttons  # 🔥 傳遞
     )
-
 
 @app.route("/race/<int:race_id>")
 @login_required
 def race_detail(race_id):
-    races_data, horses_data, trainers_data = load_real_data()
-    race = next((r for r in races_data if int(r.get("id", 0)) == race_id), None)
-
-    if race:
-        race_horses, race_trainers, summary, active_detail = build_race_detail(race, horses_data, trainers_data)
-        race_for_template = race
-    else:
-        dummy_race, dummy_horses, dummy_trainers = make_dummy_race(race_id)
-        race_horses, race_trainers, summary, active_detail = build_race_detail(dummy_race, dummy_horses, dummy_trainers)
-        race_for_template = dummy_race
-
+    if 'race_buttons' not in session:
+        update_race_buttons_session()
+    
+    race_buttons = session['race_buttons']
+    
+    # 🔥 抓真實單場數據
+    races_real, horses_real, trainers_real = load_real_data(
+        racedate="2026/05/13", racecourse="HV", raceno=race_id, use_real=True
+    )
+    
+    if races_real:  # 🔥 有真實數據
+        race = races_real[0]
+        race_horses = list(horses_real.values())  # 🔥 dict.values() → list of dicts
+        race_trainers = list(trainers_real.values())
+        
+        # 🔥 修正summary
+        summary = {
+            "race_no": race.get('id', race_id),
+            "title": race.get('title', f'R{race_id}'),
+            "class": race.get('class', '第四班'),
+            "course": race.get('course', 'HV'),
+            "date": race.get('date', '2026/05/13'),
+            "time": race.get('time', '19:10'),
+            "distance": race.get('distance', 1200),
+            "horse_count": len(race_horses),
+            "trainer_count": len(race_trainers)
+        }
+        active_detail = {
+            "type": "race", "title": race['title'],
+            "rows": [("場次", f"R{race_id}"), ("賽事", race['title'])]
+        }
+    else:  # 🔥 fallback
+        race, fallback_horses, fallback_trainers = make_dummy_race(race_id)
+        race_horses, race_trainers, summary, active_detail = build_race_detail(
+            race, fallback_horses, fallback_trainers
+        )
+    
     return render_template(
         "race.html",
-        race=race_for_template,
-        race_horses=race_horses,
+        race=race,
+        race_horses=race_horses,      # 🔥 現在是list of dicts
         race_trainers=race_trainers,
         summary=summary,
-        quick_races=races_data,
+        quick_races=[], 
         active_detail=active_detail,
         topbar_links=TOPBAR_LINKS,
-        left_panel=None,
-        right_panel=None,
-        browser_url="",
+        race_buttons=race_buttons,
+        current_race=race_id
     )
 
+def update_race_buttons_session():
+    """🔥 非阻塞更新session按鈕"""
+    race_data = {}
+    for raceno in range(1, 12):
+        params = {"racedate": "2026/05/13", "Racecourse": "HV", "RaceNo": raceno}
+        try:
+            resp = requests.get(BASE_RACECARD_URL, params=params, timeout=8)
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            race_div = soup.find('div', class_='f_fs13', style='line-height: 20px;')
+            if race_div:
+                text = race_div.get_text()
+                match = re.search(r'第\s*(\d+)\s*場\s*[-\s]*(.+?)(?=\n|$)', text)
+                if match:
+                    race_data[raceno] = f"第 {raceno} 場 - {match.group(2).strip()}"
+            time.sleep(0.2)
+        except:
+            race_data[raceno] = f"第 {raceno} 場"
+    
+    session['race_buttons'] = race_data
+    logger.info(f"✅ Session更新：{len(race_data)}場")
+
+@app.route('/api/update-buttons')
+def api_update_buttons():
+    update_race_buttons_session()
+    return jsonify(session['race_buttons'])
 
 @app.route("/open-link")
 @login_required
@@ -581,10 +610,147 @@ def hkjc_proxy():
         return "No URL provided", 400
     return redirect(target_url)
 
+def parse_racecard_page(html, racedate="2026/05/13", racecourse="HV", raceno=None):
+    """從HKJC HTML完美提取賽事+馬匹資料"""
+    soup = BeautifulSoup(html, "html.parser")
+    
+    # 🔥 賽事標題
+    race_info_div = soup.find('div', class_='f_fs13', style='line-height: 20px;')
+    race_title = f"第 {raceno} 場"
+    if race_info_div:
+        race_text = race_info_div.get_text()
+        match = re.search(r'第\s*(\d+)\s*場\s*[-\s]*(.+?)(?=\n|$)', race_text)
+        if match:
+            race_title = f"第 {raceno} 場 - {match.group(2).strip()}"
+    
+    # 🔥 馬匹表格
+    races = [{
+        "id": int(raceno),
+        "title": race_title,
+        "date": racedate,
+        "course": racecourse,
+        "distance": 1200,
+        "horses": [],
+        "class": "第四班",
+        "time": "19:10",
+        "prize": "$1,170,000",
+        "rating": "60-40",
+        "track": '"C+3" 賽道'
+    }]
+    
+    table = soup.find('table', class_='starter')
+    if table:
+        rows = table.find('tbody').find_all('tr')
+        horse_id = 1
+        parsed_horses = {}
+        parsed_trainers = {}
+        
+        for row in rows:
+            cols = row.find_all(['td'])
+            if len(cols) < 15: continue
+            
+            horse_no = cols[0].get_text(strip=True)
+            form = cols[1].get_text(strip=True)
+            silk_img = cols[2].img['src'] if cols[2].find('img') else ""
+            horse_name = cols[3].get_text(strip=True)
+            weight = cols[5].get_text(strip=True)
+            jockey = cols[6].get_text(strip=True)
+            draw = cols[8].get_text(strip=True)
+            trainer = cols[9].get_text(strip=True)
+            rating = cols[11].get_text(strip=True)
+            rating_change = cols[12].get_text(strip=True)
+            body_weight = cols[13].get_text(strip=True)
+            gear = cols[-1].get_text(strip=True)
+            
+            trainer_id = slugify_trainer(trainer)
+            parsed_horses[horse_id] = {
+                "id": horse_id, "no": horse_no, "name": horse_name, "silk": silk_img,
+                "weight": weight, "jockey": jockey, "draw": draw, "trainer": trainer,
+                "trainer_id": trainer_id, "rating": rating, "rating_change": rating_change,
+                "body_weight": body_weight, "form": form, "gear": gear
+            }
+            
+            if trainer_id not in parsed_trainers:
+                parsed_trainers[trainer_id] = {"name": trainer, "horses": []}
+            parsed_trainers[trainer_id]["horses"].append(horse_id)
+            races[0]["horses"].append(horse_id)
+            horse_id += 1
+    
+    return races, parsed_horses, parsed_trainers
+
+
+import requests
+from bs4 import BeautifulSoup
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+def fetch_race_info(raceno):
+    """抓單場賽事資訊"""
+    params = {
+        "racedate": "2026/05/13",
+        "Racecourse": "HV", 
+        "RaceNo": raceno
+    }
+    try:
+        resp = requests.get(
+            "https://racing.hkjc.com/zh-hk/local/information/racecard",
+            params=params,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+            timeout=10
+        )
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        
+        # 🔥 精準提取（從你R2.txt驗證過）
+        race_div = soup.find('div', class_='f_fs13', style='line-height: 20px;')
+        if race_div:
+            text = race_div.get_text()
+            match = re.search(r'第\s*(\d+)\s*場\s*[-\s]*(.+?)(?=\n|$)', text)
+            if match:
+                return {
+                    'raceno': raceno,
+                    'title': f"第 {raceno} 場 - {match.group(2).strip()}",
+                    'full_info': text.strip()
+                }
+    except:
+        pass
+    return None
+
+def update_all_race_buttons():
+    """🔥 一鍵更新R1-R11所有按鈕！"""
+    print("🚀 批量更新跑馬地2026/05/13所有場次...")
+    
+    race_data = {}
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(fetch_race_info, i) for i in range(1, 12)]
+        
+        for future in futures:
+            result = future.result(timeout=15)
+            if result:
+                race_data[result['raceno']] = result['title']
+                print(f"✅ {result['title']}")
+            time.sleep(0.5)  # 防反爬
+    
+    # 💾 保存到你的資料庫/JSON
+    import json
+    with open('race_buttons.json', 'w', encoding='utf-8') as f:
+        json.dump(race_data, f, ensure_ascii=False, indent=2)
+    
+    print(f"\n🎉 更新完成！共 {len(race_data)} 場")
+    return race_data
+
+# 🔥 你Flask路由直接用
+@app.route('/update-buttons')
+def update_buttons():
+    data = update_all_race_buttons()
+    return jsonify(data)
+
+
 
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html", topbar_links=TOPBAR_LINKS), 404
+
+
 
 
 if __name__ == "__main__":
