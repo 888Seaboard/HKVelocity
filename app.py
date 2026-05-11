@@ -1,3 +1,4 @@
+from email.mime import text
 import os
 import logging
 import threading
@@ -293,42 +294,85 @@ def logout():
     return redirect(url_for("login"))
 
 
+def build_index_races(races_data, total_races=11):
+    race_map = {int(r.get("id", 0)): r for r in races_data}
+    fixed = []
+    for n in range(1, total_races + 1):
+        r = race_map.get(n)
+        if r:
+            fixed.append({
+                "id": r.get("id", n),
+                "class": r.get("class", ""),
+                "course": r.get("course", ""),
+                "date": r.get("date", ""),
+                "time": r.get("time", ""),
+                "distance": r.get("distance", ""),
+                "title": r.get("title", ""),
+            })
+        else:
+            fixed.append({
+                "id": n,
+                "class": "",
+                "course": "",
+                "date": "",
+                "time": "",
+                "distance": "",
+                "title": "",
+            })
+    return fixed
+
+
 @app.route("/")
 @login_required
 def home():
     q = request.args.get("q", "").strip().lower()
     course = request.args.get("course", "").strip()
     sort = request.args.get("sort", "id")
-    racedate = request.args.get("racedate", "").strip()
-    racecourse = request.args.get("racecourse", "").strip()
-    
-    # 🔥 先更新按鈕數據
+
     if 'race_buttons' not in session:
         update_race_buttons_session()
-    
+
     race_buttons = session.get('race_buttons', {})
     races_data, horses_data, trainers_data = load_real_data()
-    
-    # 🔥 更新races title為真實中文
+
     for race in races_data:
-        race_no = race['id']
+        race_no = int(race.get("id", 0))
         if race_no in race_buttons:
-            race['title'] = race_buttons[race_no]
-    
-    # 你原來的filtered邏輯...
+            race["title"] = race_buttons[race_no]
+
     filtered = races_data[:]
-    if q: filtered = [r for r in filtered if q in str(r.get("title", "")).lower()]
-    if course: filtered = [r for r in filtered if r.get("course") == course]
-    
-    courses = sorted(set(r.get("course", "") for r in races_data))
+    if q:
+        filtered = [
+            r for r in filtered
+            if q in str(r.get("title", "")).lower()
+            or q in str(r.get("course", "")).lower()
+        ]
+    if course:
+        filtered = [r for r in filtered if r.get("course") == course]
+
+    if sort == "date":
+        filtered = sorted(filtered, key=lambda x: x.get("date", ""))
+    elif sort == "distance":
+        filtered = sorted(filtered, key=lambda x: x.get("distance", 0))
+    else:
+        filtered = sorted(filtered, key=lambda x: x.get("id", 0))
+
+    fixed_races = build_index_races(races_data, total_races=11)
+    courses = sorted(set(r.get("course", "") for r in races_data if r.get("course")))
     featured_horses = list(LOCAL_FALLBACK_HORSES.values())[:4]
     race_track_notes = [("跑道", "跑馬地草地"), ("賽道", '"C+3"'), ("狀態", "良好")]
-    
+
     return render_template(
         "index.html",
-        races=filtered, q=q, course=course, sort=sort, courses=courses,
-        featured_horses=featured_horses, race_track_notes=race_track_notes,
-        topbar_links=TOPBAR_LINKS, race_buttons=race_buttons  # 🔥 傳遞
+        races=fixed_races,
+        q=q,
+        course=course,
+        sort=sort,
+        courses=courses,
+        featured_horses=featured_horses,
+        race_track_notes=race_track_notes,
+        topbar_links=TOPBAR_LINKS,
+        race_buttons=race_buttons,
     )
 
 @app.route("/race/<int:race_id>")
@@ -349,16 +393,13 @@ def race_detail(race_id):
         race_trainers = list(trainers_real.values())
 
         summary = {
-            "race_no": f"第 {race_id} 場",
-            "class": race.get("class", ""),
-            "course": race.get("course", ""),
-            "date": race.get("date", ""),
-            "time": race.get("time", ""),
-            "distance": f"{race.get('distance', '')}米",
-            "title": race.get("title", "").split("-", 1)[-1].strip(),
-            "prize": f"獎金: {race.get('prize', '')}",
-            "rating": f"評分: {race.get('rating', '')}",
-        }
+    "race_no": f"第 {race_id} 場",
+    "class": race.get("class", ""),
+    "distance": f"{race.get('distance', '')}米" if race.get("distance") else "",
+    "title": race.get("title", "").split("-", 1)[-1].strip(),
+    "prize": f"獎金: {race.get('prize', '')}" if race.get("prize") else "",
+    "rating": f"評分: {race.get('rating', '')}" if race.get("rating") else "",
+    }
 
         active_detail = {
             "type": "race",
@@ -616,34 +657,40 @@ def hkjc_proxy():
 def parse_racecard_page(html, racedate="2026/05/13", racecourse="HV", raceno=None):
     soup = BeautifulSoup(html, "html.parser")
 
-    race_info_div = soup.find("div", class_="f_fs13", style="line-height: 20px;")
     race_title = f"第 {raceno} 場"
     race_class = ""
     distance = 1200
     prize = ""
     rating = ""
 
+    race_info_div = soup.find("div", class_="f_fs13", style="line-height: 20px;")
     if race_info_div:
-        race_text = race_info_div.get_text(" ", strip=True)
-        match = re.search(r"第\s*(\d+)\s*場\s*-\s*(.+)", race_text)
-        if match:
-            race_title = f"第 {raceno} 場 - {match.group(2).strip()}"
+        text = race_info_div.get_text(" ", strip=True)
 
-        m2 = re.search(r"(\d+)米", race_text)
-        if m2:
-            distance = int(m2.group(1))
+        m_title = re.search(r"第\s*(\d+)\s*場\s*-\s*(.+?)(?=\s+\w{3,}\s+\d{4}|\s+Turf|\s+All Weather|$)", text)
+        if m_title:
+            race_title = f"第 {raceno} 場 - {m_title.group(2).strip()}"
 
-        m3 = re.search(r"獎金:\s*([^\s]+(?:\s?[^\s]+)*)", race_text)
-        if m3:
-            prize = m3.group(1).strip()
+        m_distance = re.search(r"(\d+)\s*M", text, re.IGNORECASE)
+        if m_distance:
+            distance = int(m_distance.group(1))
 
-        m4 = re.search(r"評分:\s*([0-9\-]+)", race_text)
-        if m4:
-            rating = m4.group(1).strip()
+        m_prize = re.search(r"Prize Money:\s*([^,]+(?:,\s*[^,]+)*)", text, re.IGNORECASE)
+        if m_prize:
+            prize = m_prize.group(1).strip()
 
-        m5 = re.search(r"(第四班|第三班|第二班|第一班)", race_text)
-        if m5:
-            race_class = m5.group(1)
+        m_rating = re.search(r"Rating:\s*([0-9\-]+)", text, re.IGNORECASE)
+        if m_rating:
+            rating = m_rating.group(1).strip()
+
+        m_class = re.search(r"(?:Class\s*([1-5])|第\s*([一二三四五])\s*班|([一二三四五])班)", text, re.IGNORECASE)
+        if m_class:
+            cls = m_class.group(1) or m_class.group(2) or m_class.group(3)
+            if cls in ["1", "2", "3", "4", "5"]:
+                race_class = f"第{cls}班"
+            else:
+                mapping = {"一": "第一班", "二": "第二班", "三": "第三班", "四": "第四班", "五": "第五班"}
+                race_class = mapping.get(cls, "")
 
     races = [{
         "id": int(raceno),
@@ -662,43 +709,56 @@ def parse_racecard_page(html, racedate="2026/05/13", racecourse="HV", raceno=Non
 
     table = soup.find("table", class_="starter")
     if table:
-        rows = table.find("tbody").find_all("tr")
-        horse_id = 1
+        tbody = table.find("tbody")
+        if tbody:
+            rows = tbody.find_all("tr")
+            horse_id = 1
 
-        for row in rows:
-            cols = row.find_all("td")
-            if len(cols) < 15:
-                continue
+            for row in rows:
+                cols = row.find_all("td")
+                if len(cols) < 15:
+                    continue
 
-            horse_name = cols[3].get_text(strip=True)
-            weight = cols[5].get_text(strip=True)
-            jockey = cols[6].get_text(strip=True)
-            draw = cols[8].get_text(strip=True)
-            trainer = cols[9].get_text(strip=True)
-            rating = cols[11].get_text(strip=True)
-            form = cols[1].get_text(strip=True)
+                horse_no = cols[0].get_text(strip=True)
+                form = cols[1].get_text(strip=True)
+                silk_img = cols[2].img["src"] if cols[2].find("img") else ""
+                horse_name = cols[3].get_text(strip=True)
+                weight = cols[5].get_text(strip=True)
+                jockey = cols[6].get_text(strip=True)
+                draw = cols[8].get_text(strip=True)
+                trainer = cols[9].get_text(strip=True)
+                rating_no = cols[11].get_text(strip=True)
+                rating_change = cols[12].get_text(strip=True)
+                body_weight = cols[13].get_text(strip=True)
+                gear = cols[-1].get_text(strip=True)
 
-            trainer_id = slugify_trainer(trainer)
-            parsed_horses[horse_id] = {
-                "id": horse_id,
-                "name": horse_name,
-                "weight": weight,
-                "jockey": jockey,
-                "draw": draw,
-                "trainer": trainer,
-                "trainer_id": trainer_id,
-                "rating": rating,
-                "form": form,
-                "official_link": ""
-            }
+                trainer_id = slugify_trainer(trainer)
+                parsed_horses[horse_id] = {
+                    "id": horse_id,
+                    "no": horse_no,
+                    "name": horse_name,
+                    "silk": silk_img,
+                    "weight": weight,
+                    "jockey": jockey,
+                    "draw": draw,
+                    "trainer": trainer,
+                    "trainer_id": trainer_id,
+                    "rating": rating_no,
+                    "rating_change": rating_change,
+                    "body_weight": body_weight,
+                    "form": form,
+                    "gear": gear,
+                    "official_link": ""
+                }
 
-            if trainer_id not in parsed_trainers:
-                parsed_trainers[trainer_id] = {"name": trainer, "horses": []}
-            parsed_trainers[trainer_id]["horses"].append(horse_id)
-            races[0]["horses"].append(horse_id)
-            horse_id += 1
+                if trainer_id not in parsed_trainers:
+                    parsed_trainers[trainer_id] = {"name": trainer, "horses": []}
+                parsed_trainers[trainer_id]["horses"].append(horse_id)
+                races[0]["horses"].append(horse_id)
+                horse_id += 1
 
     return races, parsed_horses, parsed_trainers
+
 
 
 import requests
@@ -772,7 +832,8 @@ def update_buttons():
 def page_not_found(e):
     return render_template("404.html", topbar_links=TOPBAR_LINKS), 404
 
-
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 
 if __name__ == "__main__":
