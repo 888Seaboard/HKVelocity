@@ -39,12 +39,24 @@
                 <tbody>
                     {% for r in races %}
                     <tr>
-                        <td><a href="{{ url_for('race_detail', race_id=r.id) }}">R{{ r.id }}</a></td>
+                        <td>
+                            {% if r.class or r.course or r.date or r.time or r.distance %}
+                                <a href="{{ url_for('race_detail', race_id=r.id) }}">R{{ r.id }}</a>
+                            {% else %}
+                                R{{ r.id }}
+                            {% endif %}
+                        </td>
                         <td>{{ r.class }}</td>
                         <td>{{ r.course }}</td>
                         <td>{{ r.date }}</td>
                         <td>{{ r.time }}</td>
-                        <td>{{ r.distance }}m</td>
+                        <td>
+                            {% if r.distance %}
+                                {{ r.distance }}m
+                            {% else %}
+                                &nbsp;
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -80,5 +92,4 @@
         </div>
     </aside>
 </div>
-
 {% endblock %}
