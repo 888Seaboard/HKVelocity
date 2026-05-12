@@ -4,385 +4,226 @@
 {% block content %}
 <style>
 .calculator-page {
-    padding: 0;
+    padding: 14px;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     min-height: 100vh;
+    overflow: auto;
 }
-
-    .calc-header {
-        text-align: center;
-        margin-bottom: 30px;
-        padding-top: 20px;
-    }
-
-    .calc-header h1 {
-        font-size: 2.2em;
-        color: #ffd700;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        margin: 0;
-    }
-
+.calc-header {
+    text-align: center;
+    margin-bottom: 18px;
+    padding-top: 6px;
+}
+.calc-header h1 {
+    font-size: 2.0em;
+    color: #ffd700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin: 0;
+}
 .calc-main-layout {
     display: grid;
-    grid-template-columns: 1.2fr 1.8fr;
-    gap: 16px;
+    grid-template-columns: 1.05fr 1.55fr;
+    gap: 14px;
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 16px;
     box-sizing: border-box;
+    align-items: start;
 }
-
-    /* ===== 左邊面板 ===== */
 .calc-input-panel,
 .calc-results-panel {
     width: 100%;
     box-sizing: border-box;
 }
-
 .calc-input-panel {
-    padding: 16px;
-    background: rgba(30, 30, 50, 0.9);
+    padding: 14px;
+    background: rgba(30, 30, 50, 0.92);
     border: 2px solid #ffd700;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    min-height: 750px;
+    min-height: 720px;
 }
-
 .combo-races-container,
 .race-input-group,
 .calc-input-group {
     width: 100%;
     box-sizing: border-box;
 }
-
 .combo-races-container {
     flex: 1;
     overflow-y: auto;
-    max-height: calc(100vh - 320px);
+    max-height: calc(100vh - 310px);
 }
-
-.combo-races-container::-webkit-scrollbar {
-    width: 8px;
+.panel-section {
+    margin-bottom: 20px;
 }
-
-.combo-races-container::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.2);
-    border-radius: 10px;
+.panel-section h2 {
+    font-size: 1.3em;
+    color: #ffd700;
+    margin: 0 0 12px 0;
+    border-bottom: 2px solid #ffd700;
+    padding-bottom: 8px;
 }
-
-.combo-races-container::-webkit-scrollbar-thumb {
-    background: #ffd700;
-    border-radius: 10px;
+.calc-input-group {
+    margin-bottom: 12px;
 }
-
-.combo-results-table,
-.basic-combos-table,
-.combo-methods-table {
+.calc-input-group label {
+    display: block;
+    font-size: 1.05em;
+    color: #e0e0e0;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.calc-input-group select,
+.calc-input-group input {
     width: 100%;
+    padding: 11px 12px;
+    font-size: 1.0em;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #ffd700;
+    border-radius: 6px;
+    color: #fff;
+    box-sizing: border-box;
 }
-
-    .panel-section {
-        margin-bottom: 25px;
-    }
-
-    .panel-section h2 {
-        font-size: 1.4em;
-        color: #ffd700;
-        margin: 0 0 15px 0;
-        border-bottom: 2px solid #ffd700;
-        padding-bottom: 8px;
-    }
-
-    .calc-input-group {
-        margin-bottom: 15px;
-    }
-
-    .calc-input-group label {
-        display: block;
-        font-size: 1.15em;
-        color: #e0e0e0;
-        margin-bottom: 8px;
-        font-weight: 600;
-    }
-
-    .calc-input-group select,
-    .calc-input-group input {
-        width: 100%;
-        padding: 12px;
-        font-size: 1.1em;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid #ffd700;
-        border-radius: 6px;
-        color: #fff;
-        box-sizing: border-box;
-    }
-
-    .calc-input-group select:focus,
-    .calc-input-group input:focus {
-        outline: none;
-        border-color: #ffed4e;
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        background: rgba(255, 255, 255, 0.15);
-    }
-
-    .race-input-group {
-        background: rgba(255, 215, 0, 0.05);
-        border-left: 3px solid #ffd700;
-        padding: 12px;
-        margin-bottom: 12px;
-        border-radius: 4px;
-    }
-
-    .race-input-group label {
-        font-size: 1.1em;
-        color: #ffd700;
-        margin-bottom: 8px;
-        display: block;
-        font-weight: 600;
-    }
-
-    .race-odds-inputs {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-
-    .race-odds-inputs input {
-        font-size: 1.05em;
-        padding: 10px;
-    }
-
-    .calc-btn {
-        padding: 15px;
-        font-size: 1.3em;
-        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-        color: #000;
-        border: none;
-        border-radius: 8px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-        margin-top: auto;
-    }
-
-    .calc-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(255, 215, 0, 0.5);
-    }
-
-    .calc-btn:active {
-        transform: translateY(0);
-    }
-
-    /* ===== 右邊面板 ===== */
-    .calc-results-panel {
-        background: rgba(30, 30, 50, 0.9);
-        border: 2px solid #ffd700;
-        border-radius: 12px;
-        padding: 25px;
-        min-height: 750px;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-        overflow-y: auto;
-        max-height: calc(100vh - 120px);
-    }
-
-    .calc-results-panel::-webkit-scrollbar {
-        width: 10px;
-    }
-
-    .calc-results-panel::-webkit-scrollbar-track {
-        background: rgba(0,0,0,0.2);
-        border-radius: 10px;
-    }
-
-    .calc-results-panel::-webkit-scrollbar-thumb {
-        background: #ffd700;
-        border-radius: 10px;
-    }
-
-    .calc-results-panel::-webkit-scrollbar-thumb:hover {
-        background: #ffed4e;
-    }
-
-    /* ===== 摘要區 ===== */
-    .results-summary {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        margin-bottom: 25px;
-    }
-
-    .summary-item {
-        background: rgba(255, 215, 0, 0.05);
-        border: 1px solid #ffd700;
-        padding: 15px;
-        border-radius: 6px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .summary-item.highlight {
-        background: rgba(255, 215, 0, 0.15);
-        border: 2px solid #ffd700;
-    }
-
-    .summary-label {
-        font-size: 1.05em;
-        color: #b0b0b0;
-        font-weight: 600;
-    }
-
-    .summary-value {
-        font-size: 1.3em;
-        color: #ffd700;
-        font-weight: bold;
-    }
-
-    .summary-item.highlight .summary-value {
-        color: #ffed4e;
-        font-size: 1.4em;
-    }
-
-    /* ===== 表格樣式 ===== */
-    .results-table-wrapper {
-        margin-bottom: 30px;
-    }
-
-    .results-table-wrapper h3 {
-        font-size: 1.4em;
-        color: #ffd700;
-        margin: 20px 0 12px 0;
-        border-bottom: 2px solid #ffd700;
-        padding-bottom: 8px;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-        font-size: 0.95em;
-    }
-
-    table thead {
-        position: sticky;
-        top: 0;
-        background: rgba(255, 215, 0, 0.1);
-        z-index: 10;
-    }
-
-    table th {
-        background: rgba(255, 215, 0, 0.15);
-        color: #ffd700;
-        padding: 14px;
-        text-align: left;
-        font-weight: bold;
-        font-size: 1.0em;
-        border-bottom: 2px solid #ffd700;
-        border-right: 1px solid #ffd700;
-        min-width: 70px;
-        white-space: nowrap;
-    }
-
-    table th:last-child {
-        border-right: none;
-    }
-
-    table td {
-        padding: 12px 14px;
-        color: #e0e0e0;
-        border-bottom: 1px solid #333;
-        border-right: 1px solid #333;
-        font-size: 0.95em;
-        min-width: 70px;
-        white-space: nowrap;
-    }
-
-    table td:last-child {
-        border-right: none;
-    }
-
-    table tbody tr {
-        transition: background 0.2s ease;
-    }
-
-    table tbody tr:hover {
-        background: rgba(255, 215, 0, 0.08);
-    }
-
-    table tbody tr:nth-child(even) {
-        background: rgba(0, 0, 0, 0.2);
-    }
-
-    .combo-number {
-        font-weight: bold;
-        color: #ffd700;
-        text-align: center;
-        min-width: 60px;
-    }
-
-    .combo-formula {
-        color: #b0b0b0;
-        font-family: monospace;
-        min-width: 80px;
-        text-align: center;
-    }
-
-    .combo-profit.positive {
-        color: #3ddc97;
-        font-weight: bold;
-    }
-
-    .combo-profit.negative {
-        color: #ff6b6b;
-        font-weight: bold;
-    }
-
-    .combo-profit.neutral {
-        color: #999;
-        font-weight: bold;
-    }
-
-    .amount-cell {
-        text-align: right;
-        font-family: 'Courier New', monospace;
-        min-width: 80px;
-    }
-
-    /* ===== 響應式設計 ===== */
-    @media (max-width: 1400px) {
-        .calc-main-layout {
-            grid-template-columns: 1fr;
-        }
-
-        .calc-input-panel,
-        .calc-results-panel {
-            min-height: auto;
-        }
-    }
-
-    .detail-empty {
-        text-align: center;
-        color: #999;
-        padding: 20px;
-        font-size: 1.1em;
-    }
+.race-input-group {
+    background: rgba(255, 215, 0, 0.05);
+    border-left: 3px solid #ffd700;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+.race-input-group label {
+    font-size: 1.05em;
+    color: #ffd700;
+    margin-bottom: 8px;
+    display: block;
+    font-weight: 600;
+}
+.race-odds-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.race-odds-inputs input {
+    font-size: 1.0em;
+    padding: 10px;
+}
+.calc-btn {
+    padding: 14px;
+    font-size: 1.15em;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: auto;
+}
+.calc-results-panel {
+    background: rgba(30, 30, 50, 0.92);
+    border: 2px solid #ffd700;
+    border-radius: 12px;
+    padding: 18px;
+    min-height: 720px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+}
+.results-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.summary-item {
+    background: rgba(255, 215, 0, 0.05);
+    border: 1px solid #ffd700;
+    padding: 14px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.summary-item.highlight {
+    background: rgba(255, 215, 0, 0.15);
+    border: 2px solid #ffd700;
+}
+.summary-label {
+    font-size: 1.0em;
+    color: #b0b0b0;
+    font-weight: 600;
+}
+.summary-value {
+    font-size: 1.2em;
+    color: #ffd700;
+    font-weight: bold;
+}
+.summary-item.highlight .summary-value {
+    color: #ffed4e;
+    font-size: 1.3em;
+}
+.results-table-wrapper {
+    margin-bottom: 24px;
+}
+.results-table-wrapper h3 {
+    font-size: 1.3em;
+    color: #ffd700;
+    margin: 16px 0 10px 0;
+    border-bottom: 2px solid #ffd700;
+    padding-bottom: 7px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+    font-size: 0.92em;
+}
+table th {
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 2px solid #ffd700;
+    border-right: 1px solid #ffd700;
+    white-space: nowrap;
+}
+table td {
+    padding: 10px 10px;
+    color: #e0e0e0;
+    border-bottom: 1px solid #333;
+    border-right: 1px solid #333;
+    white-space: nowrap;
+}
+.combo-number {
+    font-weight: bold;
+    color: #ffd700;
+    text-align: center;
+}
+.combo-formula {
+    color: #b0b0b0;
+    font-family: monospace;
+    white-space: normal;
+}
+.amount-cell {
+    text-align: right;
+    font-family: 'Courier New', monospace;
+}
+.combo-profit.positive { color: #3ddc97; font-weight: bold; }
+.combo-profit.negative { color: #ff6b6b; font-weight: bold; }
+.combo-profit.neutral { color: #999; font-weight: bold; }
+@media (max-width: 1400px) { .calc-main-layout { grid-template-columns: 1fr; } .calc-input-panel, .calc-results-panel { min-height: auto; } }
+@media (max-width: 768px) { .results-summary { grid-template-columns: 1fr; } .race-odds-inputs { grid-template-columns: 1fr; } }
 </style>
 
 <div class="calculator-page">
-    <div class="calc-header">
-        <h1>🧮 投注組合計算器</h1>
-    </div>
+    <div class="calc-header"><h1>🧮 投注組合計算器</h1></div>
 
     <div class="calc-main-layout">
-        <!-- 左邊：輸入區 -->
         <div class="calc-input-panel">
             <div class="panel-section">
                 <h2>投注設定</h2>
-                
                 <div class="calc-input-group">
                     <label for="combo-type">組合類型</label>
                     <select id="combo-type" onchange="updateComboRaces()">
@@ -393,91 +234,65 @@
                         <option value="6">6 關</option>
                     </select>
                 </div>
-
                 <div class="calc-input-group">
                     <label for="bet-amount-combo">單位投注 (HKD)</label>
-                    <input type="number" id="bet-amount-combo" placeholder="輸入單位投注金額" min="1" step="1" value="100">
+                    <input type="number" id="bet-amount-combo" min="1" step="1" value="100">
                 </div>
             </div>
 
-            <!-- 賠率輸入區 -->
             <div class="panel-section">
                 <h2>各關賠率</h2>
-                <div class="combo-races-container" id="combo-races-container">
-                </div>
+                <div class="combo-races-container" id="combo-races-container"></div>
             </div>
 
             <button class="calc-btn" onclick="calculateCombination()">🧮 計算組合</button>
         </div>
 
-        <!-- 右邊：結果區 -->
-        <div class="calc-results-panel" id="calc-results-panel" style="display: none;">
-            <!-- 摘要區 -->
+        <div class="calc-results-panel" id="calc-results-panel" style="display:none;">
             <div class="results-summary">
-                <div class="summary-item">
-                    <span class="summary-label">組合類型</span>
-                    <span class="summary-value" id="summary-type">-</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">成功場數</span>
-                    <span class="summary-value" id="summary-win-match">-</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">單位投注</span>
-                    <span class="summary-value" id="summary-unit">-</span>
-                </div>
-                <div class="summary-item highlight">
-                    <span class="summary-label">總投注</span>
-                    <span class="summary-value" id="summary-total-bet">-</span>
-                </div>
-                <div class="summary-item highlight">
-                    <span class="summary-label">總派彩</span>
-                    <span class="summary-value" id="summary-total-payout">-</span>
-                </div>
-                <div class="summary-item highlight">
-                    <span class="summary-label">總淨贏</span>
-                    <span class="summary-value" id="summary-total-win">-</span>
-                </div>
+                <div class="summary-item"><span class="summary-label">組合類型</span><span class="summary-value" id="summary-type">-</span></div>
+                <div class="summary-item"><span class="summary-label">成功場數</span><span class="summary-value" id="summary-win-match">-</span></div>
+                <div class="summary-item"><span class="summary-label">單位投注</span><span class="summary-value" id="summary-unit">-</span></div>
+                <div class="summary-item highlight"><span class="summary-label">總投注</span><span class="summary-value" id="summary-total-bet">-</span></div>
+                <div class="summary-item highlight"><span class="summary-label">總派彩</span><span class="summary-value" id="summary-total-payout">-</span></div>
+                <div class="summary-item highlight"><span class="summary-label">總淨贏</span><span class="summary-value" id="summary-total-win">-</span></div>
             </div>
 
-            <!-- 基本過關組合表 -->
             <div class="results-table-wrapper">
-                <h3>📊 基本過關組合</h3>
-                <table class="basic-results-table">
+                <h3>📊 基本過關結果</h3>
+                <table>
                     <thead>
                         <tr>
                             <th>組合</th>
                             <th>過關數</th>
                             <th>注數</th>
-                            <th>投注額</th>
-                            <th>派彩</th>
+                            <th>投注總額</th>
+                            <th>實得派彩</th>
                             <th>淨贏</th>
                             <th>賠率</th>
                             <th>最高派彩</th>
                         </tr>
                     </thead>
-                    <tbody id="basic-results-tbody">
-                    </tbody>
+                    <tbody id="basic-results-tbody"></tbody>
                 </table>
             </div>
 
-            <!-- 組合方式結果表 -->
             <div class="results-table-wrapper">
-                <h3>🎯 組合方式結果</h3>
-                <table class="advance-results-table">
+                <h3>🎯 投注方式</h3>
+                <table>
                     <thead>
                         <tr>
-                            <th>組合方式</th>
-                            <th>組合</th>
-                            <th>投注額</th>
-                            <th>派彩</th>
+                            <th>過關形式</th>
+                            <th>方程式(總和)</th>
+                            <th>注數</th>
+                            <th>投注總額</th>
+                            <th>實得派彩</th>
                             <th>淨贏</th>
                             <th>賠率</th>
                             <th>最高派彩</th>
                         </tr>
                     </thead>
-                    <tbody id="advance-results-tbody">
-                    </tbody>
+                    <tbody id="advance-results-tbody"></tbody>
                 </table>
             </div>
         </div>
@@ -485,311 +300,220 @@
 </div>
 
 <script>
-    let bet_count = 0;
-    let globalOddData = [];
-    let globalGeneral = {};
-    let globalBasicData = [];
-    let globalAdvanceData = [];
+let globalOddData = [];
+let globalGeneral = {};
+let globalBasicData = [];
+let globalAdvanceData = [];
 
-    function updateComboRaces() {
-        const comboType = document.getElementById('combo-type').value;
-        const container = document.getElementById('combo-races-container');
-        container.innerHTML = '';
+const allUpCodes = {
+    2: [1, 3],
+    3: [1, 3, 4, 6, 7],
+    4: [1, 4, 5, 6, 10, 11, 14, 15],
+    5: [1, 5, 6, 10, 15, 16, 20, 25, 26, 30, 31],
+    6: [1, 6, 7, 15, 20, 21, 22, 35, 41, 42, 50, 56, 57, 62, 63]
+};
 
-        for (let i = 1; i <= comboType; i++) {
-            container.innerHTML += `
-                <div class="race-input-group">
-                    <label>第 ${i} 場</label>
-                    <div class="race-odds-inputs">
-                        <input type="number" class="race-odds" placeholder="贏" step="0.01" min="0.01" data-race="${i}" data-result="win" value="">
-                        <input type="number" class="race-odds" placeholder="輸" step="0.01" min="0" data-race="${i}" data-result="loss" value="">
-                    </div>
-                </div>
-            `;
-        }
+const allUpLegMap = {
+    2: { 1:[1], 3:[1,2] },
+    3: { 1:[1], 3:[2], 4:[2,1], 6:[1,2], 7:[1,2,3] },
+    4: { 1:[1], 4:[3], 5:[3,1], 6:[2], 10:[1,2], 11:[2,3,1], 14:[1,2,3], 15:[1,2,3,4] },
+    5: { 1:[1], 5:[4], 6:[4,1], 10:[2], 15:[1,2], 16:[3,1], 20:[2,3], 25:[1,2,3], 26:[2,3,1], 30:[1,2,3,4], 31:[1,2,3,4,5] },
+    6: { 1:[1], 6:[5], 7:[5,1], 15:[2], 20:[3], 21:[1,5], 22:[4,1], 35:[2,5], 41:[1,2,5], 42:[3,4], 50:[2,3,4], 56:[1,2,3,4], 57:[1,2,3,4,5], 62:[1,2,3,4,5], 63:[1,2,3,4,5,6] }
+};
+
+function updateComboRaces() {
+    const n = parseInt(document.getElementById('combo-type').value);
+    const c = document.getElementById('combo-races-container');
+    c.innerHTML = '';
+    for (let i = 1; i <= n; i++) {
+        c.innerHTML += `<div class="race-input-group"><label>第 ${i} 場</label><div class="race-odds-inputs"><input type="number" class="race-odds" placeholder="贏" step="0.01" min="0.01" data-race="${i}" data-result="win"><input type="number" class="race-odds" placeholder="輸" step="0.01" min="0" data-race="${i}" data-result="loss"></div></div>`;
     }
+}
 
-    function setOddData() {
-        const totalMatch = parseInt(document.getElementById('combo-type').value);
-        const oddData = [];
-
-        for (let i = 0; i < totalMatch; i++) {
-            const winInput = document.querySelector(`[data-race="${i + 1}"][data-result="win"]`);
-            const lossInput = document.querySelector(`[data-race="${i + 1}"][data-result="loss"]`);
-
-            const winOdds = parseFloat(winInput.value) || 0;
-            const lossOdds = parseFloat(lossInput.value) || 0;
-
-            oddData.push({
-                odd: winOdds,
-                maxodd: winOdds,
-                lossOdds: lossOdds
-            });
-        }
-
-        return oddData;
+function setOddData() {
+    const n = parseInt(document.getElementById('combo-type').value);
+    const a = [];
+    for (let i = 1; i <= n; i++) {
+        const w = document.querySelector(`[data-race="${i}"][data-result="win"]`);
+        const l = document.querySelector(`[data-race="${i}"][data-result="loss"]`);
+        const v = parseFloat(w.value) || 0;
+        a.push({ odd: v, maxodd: v, lossOdds: parseFloat(l.value) || 0 });
     }
+    return a;
+}
 
-    function setGeneralData() {
-        const totalMatch = parseInt(document.getElementById('combo-type').value);
-        const betAmount = parseFloat(document.getElementById('bet-amount-combo').value);
-        let winMatch = 0;
-
-        for (let i = 1; i <= totalMatch; i++) {
-            const winInput = document.querySelector(`[data-race="${i}"][data-result="win"]`);
-            if (parseFloat(winInput.value) > 0) {
-                winMatch++;
-            }
-        }
-
-        return {
-            winMatch: winMatch,
-            totalMatch: totalMatch,
-            betAmount: betAmount
-        };
+function setGeneralData() {
+    const n = parseInt(document.getElementById('combo-type').value);
+    const betAmount = parseFloat(document.getElementById('bet-amount-combo').value);
+    let winMatch = 0;
+    for (let i = 1; i <= n; i++) {
+        const w = document.querySelector(`[data-race="${i}"][data-result="win"]`);
+        if ((parseFloat(w.value) || 0) > 0) winMatch++;
     }
+    return { winMatch, totalMatch: n, betAmount };
+}
 
-    function formatNumber(p_amount) {
-        return Math.round(p_amount * 100) / 100;
+function formatNumber(v) { return Math.round(v * 100) / 100; }
+function showAmount(v) { return formatNumber(v).toFixed(2); }
+
+function generateCombinations(n, k) {
+    const r = [];
+    function bt(s, cur) {
+        if (cur.length === k) { r.push([...cur]); return; }
+        for (let i = s; i < n; i++) { cur.push(i); bt(i + 1, cur); cur.pop(); }
     }
+    if (k === 0) return [[]];
+    if (k > n) return [];
+    bt(0, []);
+    return r;
+}
 
-    function calWin(oddArray, totalMatch, winMatch) {
-        if (winMatch === 0) {
-            bet_count++;
-            return 1;
-        }
-
-        let result = 0;
-        for (let i = 0; i < totalMatch - winMatch + 1; i++) {
-            const tempArray = oddArray.slice(i + 1);
-            result += oddArray[i] * calWin(tempArray, totalMatch - i - 1, winMatch - 1);
-        }
-        return result;
+function calcWin(odds, totalMatch, winMatch) {
+    if (winMatch === 0) return 1;
+    let result = 0;
+    for (let i = 0; i < totalMatch - winMatch + 1; i++) {
+        const temp = odds.slice(i + 1);
+        result += odds[i] * calcWin(temp, totalMatch - i - 1, winMatch - 1);
     }
+    return result;
+}
 
-    function setBasicSlip(oddData, general) {
-        const basicData = [];
-
-        for (let i = 0; i < general.totalMatch; i++) {
-            bet_count = 0;
-            let tempWinAmount = calWin(oddData.map(o => o.odd), general.totalMatch, i + 1);
-            tempWinAmount = formatNumber(tempWinAmount * general.betAmount);
-
-            const tempBetNo = bet_count;
-            const tempTotalPay = formatNumber(tempBetNo * general.betAmount);
-
-            bet_count = 0;
-            let tempWinMaxAmount = calWin(oddData.map(o => o.maxodd), general.totalMatch, i + 1);
-            tempWinMaxAmount = formatNumber(tempWinMaxAmount * general.betAmount);
-
-            basicData.push({
-                formula: String.fromCharCode(97 + i),
-                matchNo: i + 1,
-                betCount: tempBetNo,
-                totalPay: tempTotalPay,
-                winAmount: tempWinAmount,
-                winMaxAmount: tempWinMaxAmount
-            });
-        }
-
-        return basicData;
+function setBasicSlip(oddData, general) {
+    const d = [];
+    const odds = oddData.map(o => o.odd);
+    const maxOdds = oddData.map(o => o.maxodd);
+    for (let i = 0; i < general.totalMatch; i++) {
+        const bc = generateCombinations(general.totalMatch, i + 1).length;
+        const wa = formatNumber(calcWin(odds, general.totalMatch, i + 1) * general.betAmount);
+        const wm = formatNumber(calcWin(maxOdds, general.totalMatch, i + 1) * general.betAmount);
+        d.push({ formula: String.fromCharCode(97 + i), matchNo: i + 1, betCount: bc, totalPay: formatNumber(bc * general.betAmount), winAmount: wa, winMaxAmount: wm });
     }
+    return d;
+}
 
-    function setAdvanceSlip(basicData, general) {
-        const advanceData = [];
-        const totalMatch = general.totalMatch;
+function sortBetcount(a, b) {
+    if (a.betCount > b.betCount) return 1;
+    if (a.betCount < b.betCount) return -1;
+    return 0;
+}
 
-        // 生成所有可能的組合方式 (n 串 m)
-        // m 的範圍從 1 到 totalMatch
-        for (let m = 1; m <= totalMatch; m++) {
-            // 生成所有 C(n, k) 的組合，其中 k = totalMatch - m
-            const combinations = generateCombinations(totalMatch, totalMatch - m);
-
-            combinations.forEach(combo => {
-                let tempItem = {
-                    betCount: m,
-                    totalPay: 0,
-                    winAmount: 0,
-                    winMaxAmount: 0,
-                    formula: combo.sort((a, b) => a - b)
-                };
-
-                // 計算這個組合的投注額、派彩等
-                combo.forEach(idx => {
-                    tempItem.totalPay += basicData[idx].totalPay;
-                    tempItem.winAmount += basicData[idx].winAmount;
-                    tempItem.winMaxAmount += basicData[idx].winMaxAmount;
-                });
-
-                advanceData.push(tempItem);
-            });
+function generateFormula(arr, total) {
+    const s = arr.slice().sort((a,b)=>a-b);
+    let f = '';
+    for (let i = 0; i < total; i++) {
+        let ok = false;
+        for (let j = 0; j < s.length; j++) {
+            if (s[j] === i) { f += '&nbsp;' + String.fromCharCode(97 + s[j]); ok = true; break; }
         }
+        if (!ok) f += '&nbsp;&nbsp;';
+    }
+    return f;
+}
 
-        // 按 betCount 排序
-        advanceData.sort((a, b) => {
-            if (a.betCount !== b.betCount) {
-                return a.betCount - b.betCount;
-            }
-            // 同 betCount 的，按 formula 排序
-            return compareArrays(a.formula, b.formula);
+function buildAdvanceData(general) {
+    const n = general.totalMatch;
+    const codes = allUpCodes[n] || [];
+    const legsMap = allUpLegMap[n] || {};
+    const basicCounts = globalBasicData.map(x => x.betCount);
+    const basicPays = globalBasicData.map(x => x.totalPay);
+    const basicWins = globalBasicData.map(x => x.winAmount);
+    const basicMaxWins = globalBasicData.map(x => x.winMaxAmount);
+
+    const rows = [];
+    codes.forEach(code => {
+        const legs = legsMap[code];
+        if (!legs) return;
+        let betCount = 0, totalPay = 0, winAmount = 0, winMaxAmount = 0;
+        legs.forEach(idx => {
+            const zero = idx - 1;
+            if (basicCounts[zero] !== undefined) betCount += basicCounts[zero];
+            if (basicPays[zero] !== undefined) totalPay += basicPays[zero];
+            if (basicWins[zero] !== undefined) winAmount += basicWins[zero];
+            if (basicMaxWins[zero] !== undefined) winMaxAmount += basicMaxWins[zero];
         });
-
-        return advanceData;
-    }
-
-    function generateCombinations(n, k) {
-        const results = [];
-
-        function backtrack(start, current) {
-            if (current.length === k) {
-                results.push([...current]);
-                return;
-            }
-
-            for (let i = start; i < n; i++) {
-                current.push(i);
-                backtrack(i + 1, current);
-                current.pop();
-            }
-        }
-
-        if (k === 0) {
-            return [[]];
-        }
-
-        backtrack(0, []);
-        return results;
-    }
-
-    function compareArrays(arr1, arr2) {
-        for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
-            if (arr1[i] !== arr2[i]) {
-                return arr1[i] - arr2[i];
-            }
-        }
-        return arr1.length - arr2.length;
-    }
-
-    function calculateCombination() {
-        const totalMatch = parseInt(document.getElementById('combo-type').value);
-        const betAmount = parseFloat(document.getElementById('bet-amount-combo').value);
-
-        if (isNaN(betAmount) || betAmount <= 0) {
-            alert('請輸入有效的投注金額');
-            return;
-        }
-
-        globalOddData = setOddData();
-        globalGeneral = setGeneralData();
-
-        // 驗證至少有一個賠率
-        let hasOdds = false;
-        for (let i = 0; i < totalMatch; i++) {
-            if (globalOddData[i].odd > 0) {
-                hasOdds = true;
-                break;
-            }
-        }
-
-        if (!hasOdds) {
-            alert('請至少輸入一個賠率');
-            return;
-        }
-
-        bet_count = 0;
-        globalBasicData = setBasicSlip(globalOddData, globalGeneral);
-        bet_count = 0;
-        globalAdvanceData = setAdvanceSlip(globalBasicData, globalGeneral);
-
-        displayResults();
-    }
-
-    function displayResults() {
-        const general = globalGeneral;
-        const basicData = globalBasicData;
-        const advanceData = globalAdvanceData;
-
-        // 計算摘要
-        const totalBet = basicData.reduce((sum, b) => sum + b.totalPay, 0);
-        const totalPayout = basicData.reduce((sum, b) => sum + b.winAmount, 0);
-        const totalWin = totalPayout - totalBet;
-
-        document.getElementById('summary-type').textContent = `${general.totalMatch} 關`;
-        document.getElementById('summary-win-match').textContent = general.winMatch;
-        document.getElementById('summary-unit').textContent = `HKD $${general.betAmount.toFixed(2)}`;
-        document.getElementById('summary-total-bet').textContent = `HKD $${totalBet.toFixed(2)}`;
-        document.getElementById('summary-total-payout').textContent = `HKD $${totalPayout.toFixed(2)}`;
-        document.getElementById('summary-total-win').textContent = `HKD $${totalWin.toFixed(2)}`;
-
-        // 基本過關組合表
-        const basicTbody = document.getElementById('basic-results-tbody');
-        basicTbody.innerHTML = '';
-
-        basicData.forEach((item) => {
-            const netWin = item.winAmount - item.totalPay;
-            const odds = item.totalPay > 0 ? (item.winAmount / item.totalPay).toFixed(2) : '-';
-            const profitClass = netWin > 0 ? 'positive' : netWin < 0 ? 'negative' : 'neutral';
-
-            const row = `
-                <tr>
-                    <td class="combo-number">${item.formula}</td>
-                    <td class="combo-number">${item.matchNo}</td>
-                    <td class="combo-number">${item.betCount}</td>
-                    <td class="amount-cell">${item.totalPay.toFixed(2)}</td>
-                    <td class="amount-cell">${item.winAmount.toFixed(2)}</td>
-                    <td class="amount-cell combo-profit ${profitClass}">${netWin.toFixed(2)}</td>
-                    <td class="amount-cell">${odds}</td>
-                    <td class="amount-cell">${item.winMaxAmount.toFixed(2)}</td>
-                </tr>
-            `;
-            basicTbody.innerHTML += row;
+        rows.push({
+            comboName: `${n} 串 ${betCount}`,
+            formula: generateFormula(legs.map(x => x - 1), n),
+            betCount,
+            totalPay: formatNumber(totalPay),
+            winAmount: formatNumber(winAmount),
+            winMaxAmount: formatNumber(winMaxAmount)
         });
+    });
+    rows.sort(sortBetcount);
+    return rows;
+}
 
-        // 組合方式結果表
-        const advanceTbody = document.getElementById('advance-results-tbody');
-        advanceTbody.innerHTML = '';
+function calculateCombination() {
+    const betAmount = parseFloat(document.getElementById('bet-amount-combo').value);
+    if (isNaN(betAmount) || betAmount <= 0) { alert('請輸入有效的投注金額'); return; }
+    globalOddData = setOddData();
+    globalGeneral = setGeneralData();
+    if (!globalOddData.some(o => o.odd > 0)) { alert('請至少輸入一個賠率'); return; }
+    globalBasicData = setBasicSlip(globalOddData, globalGeneral);
+    globalAdvanceData = buildAdvanceData(globalGeneral);
+    displayResults();
+}
 
-        advanceData.forEach((item, index) => {
-            const netWin = item.winAmount - item.totalPay;
-            const odds = item.totalPay > 0 ? (item.winAmount / item.totalPay).toFixed(2) : '-';
-            const profitClass = netWin > 0 ? 'positive' : netWin < 0 ? 'negative' : 'neutral';
-            const formulaStr = generateFormula(item.formula, general.totalMatch);
-            const comboName = `${general.totalMatch} 串 ${item.betCount}`;
+function displayResults() {
+    const general = globalGeneral;
+    const basicData = globalBasicData;
+    const advanceData = globalAdvanceData.slice().sort(sortBetcount);
 
-            const row = `
-                <tr>
-                    <td class="combo-number">${comboName}</td>
-                    <td class="combo-formula">${formulaStr}</td>
-                    <td class="amount-cell">${item.totalPay.toFixed(2)}</td>
-                    <td class="amount-cell">${item.winAmount.toFixed(2)}</td>
-                    <td class="amount-cell combo-profit ${profitClass}">${netWin.toFixed(2)}</td>
-                    <td class="amount-cell">${odds}</td>
-                    <td class="amount-cell">${item.winMaxAmount.toFixed(2)}</td>
-                </tr>
-            `;
-            advanceTbody.innerHTML += row;
-        });
+    const totalBet = basicData.reduce((sum, b) => sum + b.totalPay, 0);
+    const totalPayout = basicData.reduce((sum, b) => sum + b.winAmount, 0);
+    const totalWin = totalPayout - totalBet;
 
-        document.getElementById('calc-results-panel').style.display = 'block';
-    }
+    document.getElementById('summary-type').textContent = `${general.totalMatch} 關`;
+    document.getElementById('summary-win-match').textContent = general.winMatch;
+    document.getElementById('summary-unit').textContent = `HKD $${general.betAmount.toFixed(2)}`;
+    document.getElementById('summary-total-bet').textContent = `HKD $${totalBet.toFixed(2)}`;
+    document.getElementById('summary-total-payout').textContent = `HKD $${totalPayout.toFixed(2)}`;
+    document.getElementById('summary-total-win').textContent = `HKD $${totalWin.toFixed(2)}`;
 
-    function generateFormula(formulaArr, totalFormula) {
-        let formula = '';
-        const sorted = [...formulaArr].sort((a, b) => a - b);
+    const basicTbody = document.getElementById('basic-results-tbody');
+    basicTbody.innerHTML = '';
+    basicData.forEach(item => {
+        const netWin = item.winAmount - item.totalPay;
+        const odds = item.totalPay > 0 ? (item.winAmount / item.totalPay).toFixed(2) : '-';
+        const profitClass = netWin > 0 ? 'positive' : netWin < 0 ? 'negative' : 'neutral';
+        basicTbody.innerHTML += `
+            <tr>
+                <td class="combo-number">${item.formula}</td>
+                <td class="combo-number">${item.matchNo}</td>
+                <td class="combo-number">${item.betCount}</td>
+                <td class="amount-cell">${showAmount(item.totalPay)}</td>
+                <td class="amount-cell">${showAmount(item.winAmount)}</td>
+                <td class="amount-cell combo-profit ${profitClass}">${showAmount(netWin)}</td>
+                <td class="amount-cell">${odds}</td>
+                <td class="amount-cell">${showAmount(item.winMaxAmount)}</td>
+            </tr>
+        `;
+    });
 
-        for (let i = 0; i < totalFormula; i++) {
-            if (sorted.includes(i)) {
-                formula += String.fromCharCode(97 + i) + ' ';
-            } else {
-                formula += '&nbsp; ';
-            }
-        }
-        return formula.trim();
-    }
+    const advanceTbody = document.getElementById('advance-results-tbody');
+    advanceTbody.innerHTML = '';
+    advanceData.forEach(item => {
+        const netWin = item.winAmount - item.totalPay;
+        const odds = item.totalPay > 0 ? (item.winAmount / item.totalPay).toFixed(2) : '-';
+        const profitClass = netWin > 0 ? 'positive' : netWin < 0 ? 'negative' : 'neutral';
+        advanceTbody.innerHTML += `
+            <tr>
+                <td class="combo-number">${item.comboName}</td>
+                <td class="combo-formula">${item.formula}</td>
+                <td class="combo-number">${item.betCount}</td>
+                <td class="amount-cell">${showAmount(item.totalPay)}</td>
+                <td class="amount-cell">${showAmount(item.winAmount)}</td>
+                <td class="amount-cell combo-profit ${profitClass}">${showAmount(netWin)}</td>
+                <td class="amount-cell">${odds}</td>
+                <td class="amount-cell">${showAmount(item.winMaxAmount)}</td>
+            </tr>
+        `;
+    });
 
-    // 初始化
-    updateComboRaces();
+    document.getElementById('calc-results-panel').style.display = 'block';
+}
+
+updateComboRaces();
 </script>
-
 {% endblock %}
- 

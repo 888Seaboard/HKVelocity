@@ -3,25 +3,6 @@
 
 {% block content %}
 <div class="race-page fixed-four">
-    <div class="race-header">
-<div class="race-head-left">
-    <span class="info-item">{{ summary.race_no }}</span>
-    <span class="info-item">{{ summary.class }}</span>
-    <span class="info-item">{{ summary.distance }}</span>
-    <span class="info-item">{{ summary.title }}</span>
-    <span class="info-item">{{ summary.prize }}</span>
-    <span class="info-item">{{ summary.rating }}</span>
-</div>
-
-        <div class="race-head-right">
-            <a href="{{ url_for('home') }}">主頁
-            </a>
-            {% for n in range(1, 12) %}
-                <a class="race-btn {% if race and race.id == n %}active{% endif %}" href="{{ url_for('race_detail', race_id=n) }}">R{{ n }}</a>
-            {% endfor %}
-        </div>
-    </div>
-
     <div class="quad-grid">
         <section class="quad quad-race-list">
             <div class="panel-title">排位表</div>
@@ -133,26 +114,26 @@
                 let isFullscreen = false;
                 let originalParent = null;
                 let originalNextSibling = null;
-                
+
                 function reloadBrowser() {
                     const iframe = document.getElementById('browser-frame');
                     document.getElementById('browser-loading').style.display = 'block';
                     document.getElementById('browser-loading').innerHTML = 'Loading HKJC content...';
                     iframe.src = iframe.src;
                 }
-                
+
                 function toggleFullscreen() {
                     const wrapper = document.getElementById('browser-wrapper');
                     const section = document.getElementById('quad-topbar-detail');
                     const btn = event.target;
-                    
+
                     if (!isFullscreen) {
                         // 進入全屏模式
                         originalParent = wrapper.parentNode;
                         originalNextSibling = wrapper.nextSibling;
-                        
+
                         document.body.appendChild(wrapper);
-                        
+
                         wrapper.style.position = 'fixed';
                         wrapper.style.top = '0';
                         wrapper.style.left = '0';
@@ -162,7 +143,7 @@
                         wrapper.style.borderRadius = '0';
                         wrapper.style.margin = '0';
                         wrapper.style.padding = '0';
-                        
+
                         btn.textContent = '⛶ Exit';
                         btn.style.color = '#ff6b6b';
                         isFullscreen = true;
@@ -175,7 +156,7 @@
                                 originalParent.appendChild(wrapper);
                             }
                         }
-                        
+
                         wrapper.style.position = '';
                         wrapper.style.top = '';
                         wrapper.style.left = '';
@@ -185,7 +166,7 @@
                         wrapper.style.borderRadius = '';
                         wrapper.style.margin = '';
                         wrapper.style.padding = '';
-                        
+
                         btn.textContent = '⛶';
                         btn.style.color = '';
                         isFullscreen = false;
@@ -193,21 +174,21 @@
                 }
             </script>
             {% elif right_panel %}
-                <div class="external-view">
-                    <div class="external-title">{{ right_panel.title }}</div>
-                    <div class="external-url">{{ right_panel.url }}</div>
-                    {% if right_panel.ok %}
-                        {% if right_panel.body_text %}
-                            <pre class="external-body">{{ right_panel.body_text }}</pre>
-                        {% else %}
-                            <div class="detail-empty">No text content found on this page.</div>
-                        {% endif %}
+            <div class="external-view">
+                <div class="external-title">{{ right_panel.title }}</div>
+                <div class="external-url">{{ right_panel.url }}</div>
+                {% if right_panel.ok %}
+                    {% if right_panel.body_text %}
+                        <pre class="external-body">{{ right_panel.body_text }}</pre>
                     {% else %}
-                        <div class="detail-empty">Fetch failed: {{ right_panel.error }}</div>
+                        <div class="detail-empty">No text content found on this page.</div>
                     {% endif %}
-                </div>
+                {% else %}
+                    <div class="detail-empty">Fetch failed: {{ right_panel.error }}</div>
+                {% endif %}
+            </div>
             {% else %}
-                <div class="detail-empty">Select a topbar link to view details.</div>
+            <div class="detail-empty">Select a topbar link to view details.</div>
             {% endif %}
         </section>
     </div>

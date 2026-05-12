@@ -9,12 +9,31 @@
 <body>
     <div class="app-shell">
         <header class="topbar">
-            <div class="brand">
-                <a href="{{ url_for('home') }}">
-                    <span class="brand-hk">HK</span><span class="brand-velocity">Velocity</span>
-                </a>
+            <!-- 左邊：Logo + user badge / login / logout -->
+            <div class="topbar-left">
+                <div class="brand">
+                    <a href="{{ url_for('home') }}">
+                        <span class="brand-hk">HK</span><span class="brand-velocity">Velocity</span>
+                    </a>
+                </div>
+
+                {% if current_user.is_authenticated %}
+                    <span class="user-badge">👤 {{ current_user.id }}</span>
+                    <a class="btn-link btn-logout" href="{{ url_for('logout') }}">🚪 Logout</a>
+                {% else %}
+                    <a class="btn-link btn-login" href="{{ url_for('login') }}">🔑 Login</a>
+                {% endif %}
             </div>
 
+            <!-- 中間：R1–R11 Race 按鈕 -->
+            <div class="topbar-center">
+                {% for n in range(1, 12) %}
+                <a class="race-btn {% if request.endpoint == 'race_detail' and request.view_args.get('race_id') == n %}active{% endif %}"
+                   href="{{ url_for('race_detail', race_id=n) }}">R{{ n }}</a>
+                {% endfor %}
+            </div>
+
+            <!-- 右邊：導航按鈕群 -->
             <div class="topbar-right">
                 <a class="btn-link btn-calculator" href="/calculator" title="Betting Calculator">
                     🧮 計算器
@@ -55,20 +74,12 @@
                     🎁 特別獎金馬
                 </a>
 
-
                 <a class="btn-link btn-schedule"
                    href="https://racing.hkjc.com/zh-hk/local/information/fixture"
                    target="_blank"
                    rel="noopener noreferrer">
                     📅 賽期表
                 </a>
-
-                {% if current_user.is_authenticated %}
-                    <span class="user-badge">👤 {{ current_user.id }}</span>
-                    <a class="btn-link btn-logout" href="{{ url_for('logout') }}">🚪 Logout</a>
-                {% else %}
-                    <a class="btn-link btn-login" href="{{ url_for('login') }}">🔑 Login</a>
-                {% endif %}
             </div>
         </header>
 

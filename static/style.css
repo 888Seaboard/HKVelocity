@@ -34,12 +34,11 @@ html, body {
 body {
     margin: 0;
     font-family: Arial, "Noto Sans HK", "Microsoft JhengHei", sans-serif;
-    background:
-        radial-gradient(circle at top, rgba(212, 175, 55, 0.08) 0%, transparent 28%),
-        radial-gradient(circle at top, #151a24 0%, #0f1115 55%, #0b0d12 100%);
+    background: radial-gradient(circle at top, rgba(212, 175, 55, 0.08) 0%, transparent 28%),
+                radial-gradient(circle at top, #151a24 0%, #0f1115 55%, #0b0d12 100%);
     color: var(--text);
     min-height: 100vh;
-    overflow: hidden;
+    overflow: auto;   /* 之前是 hidden，改成 auto */
 }
 
 a {
@@ -97,20 +96,27 @@ a:hover {
 .topbar-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 4px;           /* 10px → 6px，整體更緊湊 */
     flex-wrap: wrap;
 }
 
+/* 左邊：logo + user badge + logout */
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;           /* 這裡決定 user-badge / Logout / Logo 之間的空隙 */
+}
+
 .btn-link {
-    padding: 8px 14px;
+    padding: 6px 8px;    /* 原 8px 14px，現在變窄很多 */
     border: 1px solid rgba(212, 175, 55, 0.28);
-    border-radius: 10px;
+    border-radius: 8px;   /* 可以略小一點，視覺更緊湊 */
     background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.12));
     color: var(--gold);
     font-weight: 700;
     cursor: pointer;
     transition: var(--transition);
-    font-size: 14px;
+    font-size: 13px;      /* 可選：略微縮小字體 */
 }
 
 .btn-link:hover {
@@ -126,9 +132,9 @@ a:hover {
 
 .user-badge {
     color: var(--muted);
-    font-size: 13px;
-    padding: 4px 9px;
-    border: 1px solid rgba(212, 175, 55, 0.18);
+    font-size: 12px;    /* 可略縮一點，視覺更緊湊 */
+    padding: 4px 8px;   /* 你原本 4px 9px，可以再縮一點 */
+    border: 1px solid var(--gold-border);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.02);
     white-space: nowrap;
@@ -138,7 +144,7 @@ a:hover {
     flex: 1 1 auto;
     min-height: 0;
     padding: 12px;
-    overflow: hidden;
+    overflow: auto;   /* 之前是 hidden，改成 auto */
 }
 
 /* ============= 通用 Panel 樣式 ============= */
@@ -288,9 +294,9 @@ a:hover {
 
 .quad-grid {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: 1.2fr 1fr;
     grid-template-rows: 1fr 1fr;
-    gap: 12px;
+    gap: 10px;
 }
 
 .quad {
