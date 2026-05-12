@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}標準時間表 - HKVelocity{% endblock %}
+
+{% block content %}
+<div class="standards-container panel-base">
+    <!-- 更新資訊 -->
+    <div class="panel-title">
+        <span>⏱️ HKJC 跑道標準時間表</span>
+        <a href="{{ url_for('refresh_standards') }}" class="btn-link btn-refresh">🔄 刷新</a>
+    </div>
+    
+    <div class="panel-section">
+        <span class="update-info">🕒 {{ update_time or '即時載入' }} | {{ standards|length }} 組途程</span>
+    </div>
+
+    <!-- 標準時間表 -->
+    <div class="table-wrap">
+        <table class="standards-table table-base">
+            <thead>
+                <tr>
+                    <th>途程</th>
+                    <th>G1/1班</th>
+                    <th>2班</th>
+                    <th>3班</th>
+                    <th>4班</th>
+                    <th>5班</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dist, times in standards.items() %}
+                <tr {% if dist == 1200 %}class="highlight"{% endif %}>
+                    <td><strong>{{ dist }}m</strong></td>
+                    <td>{{ times.class1 or '-' }}</td>
+                    <td>{{ times.class2 or '-' }}</td>
+                    <td>{{ times.class3 or '-' }}</td>
+                    <td>{{ times.class4 or '-' }}</td>
+                    <td>{{ times.class5 or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 步速計算器 -->
+    <div id="pace-calc" class="panel-section">
+        <div class="panel-title">
+            <span>⚡ 步速計算器</span>
+        </div>
+        <div class="form-group">
+            <label>途程</label>
+            <select id="dist-select" class="form-input">
+                {% for dist in standards.keys() | sort %}
+                <option value="{{ dist }}">{{ dist }}m</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>班次</label>
+            <select id="class-select" class="form-input">
+                <option value="class1">1班</option>
+                <option value="class2">2班</option>
+                <option value="class3" selected>3班</option>
+                <option value="class4">4班</option>
+                <option value="class5">5班</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>實際時間</label>
+            <input type="text" id="actual-time" class="form-input" placeholder="1:10.2" value="1:10.5">
+        </div>
+        <button class="calc-btn" onclick="calculatePace()">🚀 計算步速</button>
+        <div id="pace-result" class="detail-row result-box"></div>
+    </div>
+
+    <!-- 下載 -->
+    <div class="panel-section">
+        <a href="{{ url_for('api_standards') }}" download="hkjc_standards.json" class="btn-link">
+            💾 下載 JSON
+        </a>
+    </div>
+</div>
+
+<script>
+let standardsData = {{ standards|tojson }};
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('actual-time').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') calculatePace();
+    });
+});
+
+function calculatePace() {
+    const dist = parseInt(document.getElementById('dist-select').value);
+    const cls = document.getElementById('class-select').value;
+    const actualTime = document.getElementById('actual-time').value.trim();
+    
+    const stdTime = standardsData[dist]?.[cls];
+    if (!stdTime) {
+        document.getElementById('pace-result').innerHTML = '<span class="detail-empty">❌ 找不到標準時間</span>';
+        return;
+    }
+    
+    const rating = computePaceRating(stdTime, actualTime);
+    const status = rating > 0 ? '🟢 快於標準' : '🔴 慢於標準';
+    
+    document.getElementById('pace-result').innerHTML = `
+        <div><span>步速評分：</span><div>${rating.toFixed(1)} 點</div></div>
+        <div><span>標準 vs 實際：</span><div>${stdTime} vs ${actualTime}</div></div>
+        <div><span>狀態：</span><div>${status} ${Math.abs(rating).toFixed(1)} 點</div></div>
+    `;
+    document.getElementById('pace-result').className = rating > 0 ? 'detail-row good' : 'detail-row bad';
+}
+
+function computePaceRating(stdTimeStr, actualTimeStr) {
+    const stdSeconds = timeToSeconds(stdTimeStr);
+    const actualSeconds = timeToSeconds(actualTimeStr);
+    return (stdSeconds - actualSeconds) * 100;
+}
+
+function timeToSeconds(timeStr) {
+    const parts = timeStr.match(/(\d+):(\d+)\.(\d+)/) || [0,0,0,0];
+    return parseInt(parts[1]) * 60 + parseInt(parts[2]) + parseInt(parts[3]) / 10;
+}
+</script>
+
+<style>
+/* 🔥 最小 CSS，只修視覺問題 */
+.standards-container { max-width: 100%; }
+.update-info { color: var(--muted); font-size: 13px; }
+.standards-table th { background: rgba(212, 175, 55, 0.12) !important; }
+.standards-table .highlight td { background: rgba(212, 175, 55, 0.08) !important; }
+.result-box.good { border-color: var(--success) !important; }
+.result-box.bad { border-color: var(--danger) !important; }
+.btn-refresh { padding: 4px 12px !important; font-size: 12px !important; }
+</style>
+{% endblock %}

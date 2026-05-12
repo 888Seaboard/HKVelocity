@@ -1055,3 +1055,63 @@ a:hover {
         grid-template-columns: 1fr;
     }
 }
+//* 🔥 內部工具（原本計算器金色） */
+.btn-calculator, .btn-pace-calc, .btn-course-time {
+    background: linear-gradient(135deg, rgba(247, 224, 138, 1), rgba(212, 175, 55, 1)) !important;
+    color: #1b1403 !important;
+    border: 1px solid rgba(212, 175, 55, 0.4) !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+    font-weight: 800 !important;
+}
+
+.btn-calculator:hover, .btn-pace-calc:hover, .btn-course-time:hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 1), rgba(168, 125, 23, 1)) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4) !important;
+}
+
+/* 🔥 外部 HKJC 連結（鮮明金色 - 你的暗色風格） */
+.btn-infosummary, .btn-weather, .btn-course-select, .btn-fwb, .btn-schedule {
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold)) !important;
+    color: #1b1403 !important;  /* 深色文字，確保可讀 */
+    border: 1px solid var(--gold-border-light) !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+    font-weight: 700 !important;
+}
+
+.btn-infosummary:hover, 
+.btn-weather:hover, 
+.btn-course-select:hover, 
+.btn-fwb:hover, 
+.btn-schedule:hover {
+    background: linear-gradient(135deg, var(--gold), var(--gold-deep)) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 16px var(--gold-border-lighter) !important;
+}
+
+/* 🔥 標準時間表（暗色主題） */
+.standards-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin: 20px 0; 
+    background: var(--bg-light);
+}
+.standards-table th, .standards-table td { 
+    border: 1px solid var(--line); 
+    padding: 12px 8px; 
+    text-align: center; 
+    color: var(--text);
+}
+.standards-table th { 
+    background: linear-gradient(135deg, var(--gold-border-light), var(--gold-border));
+    color: var(--gold-bright);
+    font-weight: 700;
+}
+#pace-calc { 
+    margin-top: 40px; 
+    padding: 24px; 
+    background: var(--bg-lighter);
+    border-radius: var(--radius); 
+    border: 1px solid var(--gold-border);
+    box-shadow: var(--shadow-sm);
+}

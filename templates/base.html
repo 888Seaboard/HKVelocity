@@ -33,51 +33,49 @@
                 {% endfor %}
             </div>
 
-            <!-- 右邊：導航按鈕群 -->
+            <!-- 🔥 右邊：導航按鈕群（完整修復版） -->
             <div class="topbar-right">
+                <!-- 內部工具（紫色） -->
                 <a class="btn-link btn-calculator" href="/calculator" title="Betting Calculator">
                     🧮 計算器
                 </a>
+                
+                <a class="btn-link btn-pace-calc" href="{{ url_for('standards') }}#pace-calc">
+                    ⚡ 步速計算
+                </a>
+                
+                <a class="btn-link btn-course-time" href="{{ url_for('standards') }}">
+                    ⏱️ 標準時間表
+                </a>
 
+                <!-- 外部 HKJC（藍色） -->
                 <a class="btn-link btn-infosummary"
                    href="https://racing.hkjc.com/zh-hk/local/info/summary"
-                   target="_blank"
-                   rel="noopener noreferrer">
+                   target="_blank" rel="noopener noreferrer">
                     📢 賽日資訊
                 </a>
 
                 <a class="btn-link btn-weather"
                    href="https://racing.hkjc.com/zh-hk/local/info/windtracker"
-                   target="_blank"
-                   rel="noopener noreferrer">
+                   target="_blank" rel="noopener noreferrer">
                     ☀️ 天氣狀況
                 </a>
 
                 <a class="btn-link btn-course-select"
                    href="https://racing.hkjc.com/zh-hk/local/page/racing-course-select"
-                   target="_blank"
-                   rel="noopener noreferrer">
+                   target="_blank" rel="noopener noreferrer">
                     🏇 賽道選用
-                </a>
-
-                <a class="btn-link btn-course-time"
-                   href="https://racing.hkjc.com/zh-hk/local/page/racing-course-time"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    ⏱️ 跑道標準
                 </a>
 
                 <a class="btn-link btn-fwb"
                    href="https://racing.hkjc.com/zh-hk/local/page/fwb-declared-starters"
-                   target="_blank"
-                   rel="noopener noreferrer">
+                   target="_blank" rel="noopener noreferrer">
                     🎁 特別獎金馬
                 </a>
 
                 <a class="btn-link btn-schedule"
                    href="https://racing.hkjc.com/zh-hk/local/information/fixture"
-                   target="_blank"
-                   rel="noopener noreferrer">
+                   target="_blank" rel="noopener noreferrer">
                     📅 賽期表
                 </a>
             </div>
