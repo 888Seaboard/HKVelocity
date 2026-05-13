@@ -11,7 +11,6 @@
                     <thead>
                         <tr>
                             <th>中文名稱</th>
-                            <th>鏈接</th>
                             <th>騎師</th>
                             <th>練馬師</th>
                             <th>檔位</th>
@@ -25,8 +24,7 @@
                             {% for horse in race_horses %}
                             <tr>
                                 <td class="wrap"><a href="{{ url_for('horse_detail', horse_id=horse.id) }}">{{ horse.name }}</a></td>
-                                <td class="wrap"><a href="{{ url_for('open_link', url=horse.official_link) }}">Open</a></td>
-                                <td class="wrap">-</td>
+                                <td class="wrap">{{ horse.jockey or '-' }}</td>  <!-- ✅ 騎師顯示 -->
                                 <td class="wrap"><a href="{{ url_for('trainer_detail', trainer_id=horse.trainer_id) }}">{{ horse.trainer }}</a></td>
                                 <td>{{ horse.draw }}</td>
                                 <td>{{ horse.weight }}</td>

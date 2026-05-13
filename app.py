@@ -437,81 +437,46 @@ def build_index_races(races_data, total_races=11):
 @app.route("/")
 @login_required
 def home():
-    q = request.args.get("q", "").strip().lower()
-    course = request.args.get("course", "").strip()
-    sort = request.args.get("sort", "id")
-
-    # 🔥 确保 session 有数据
-    if 'race_buttons' not in session or not session.get('race_buttons'):
-        logger.info("🔄 Race buttons empty, updating...")
+    # 強制更新 session
+    if 'race_buttons' not in session:
+        logger.info("🔄 Initializing race_buttons session")
         update_race_buttons_session()
-
-    race_buttons = session.get('race_buttons', {})
     
-    # 🔥 直接构建 races_data（确保有数据）
+    race_buttons = session.get('race_buttons', {})
+    logger.info(f"📊 Session races: {len(race_buttons)}, sample: {dict(list(race_buttons.items())[:2])}")
+    
+    # 🔥 固定建 11 場，缺資料用 fallback
     races_data = []
     for n in range(1, 12):
-        btn = race_buttons.get(n, {})
-        if isinstance(btn, dict):
-            race = {
-                "id": n,
-                "title": btn.get('title', f"第 {n} 場"),
-                "class": btn.get('class', ''),
-                "time": btn.get('time', ''),
-                "distance": btn.get('distance', ''),
-                "course": btn.get('course', 'HV'),
-                "date": btn.get('date', '2026-05-13'),
-            }
-        else:
-            # 降级：如果 race_buttons[n] 是字符串（旧格式）
-            race = {
-                "id": n,
-                "title": btn if isinstance(btn, str) else f"第 {n} 場",
-                "class": '',
-                "time": '',
-                "distance": '',
-                "course": 'HV',
-                "date": '2026-05-13',
-            }
+        btn_data = race_buttons.get(n, {})
+        race = {
+            "id": n,
+            "title": btn_data.get('title', f'第 {n} 場'),
+            "class": btn_data.get('class', ''),
+            "time": btn_data.get('time', ''),
+            "distance": btn_data.get('distance', ''),
+            "course": btn_data.get('course', 'HV'),
+            "date": btn_data.get('date', '2026-05-13'),
+        }
         races_data.append(race)
+        # 搜尋/排序（保留列）
+    q = request.args.get("q", "").strip().lower()
+    filtered = races_data[:]  # 複製，不要改原資料
     
-    logger.info(f"📊 Total races: {len(races_data)}, First: {races_data[0] if races_data else 'EMPTY'}")
-
-    # 过滤逻辑
-    filtered = races_data[:]
     if q:
-        filtered = [
-            r for r in filtered
-            if q in str(r.get("title", "")).lower()
-            or q in str(r.get("course", "")).lower()
-        ]
-    if course:
-        filtered = [r for r in filtered if r.get("course") == course]
-
-    # 排序逻辑
-    if sort == "date":
-        filtered = sorted(filtered, key=lambda x: x.get("date", ""))
-    elif sort == "distance":
-        filtered = sorted(filtered, key=lambda x: x.get("distance", 0) or 0)
-    else:
-        filtered = sorted(filtered, key=lambda x: x.get("id", 0))
-
-    courses = sorted(set(r.get("course", "") for r in races_data if r.get("course")))
-    featured_horses = list(LOCAL_FALLBACK_HORSES.values())[:4]
-    race_track_notes = [("跑道", "跑馬地草地"), ("賽道", '"C+3"'), ("狀態", "良好")]
-
+        filtered = [r for r in filtered if q in r.get("title", "").lower()]
+    
+    courses = sorted(set(r.get("course", "") for r in races_data))
+    
     return render_template(
         "index.html",
         races=filtered,
         q=q,
-        course=course,
-        sort=sort,
         courses=courses,
-        featured_horses=featured_horses,
-        race_track_notes=race_track_notes,
         topbar_links=TOPBAR_LINKS,
-        race_buttons=race_buttons,
+        race_buttons=race_buttons,  # 傳給模板
     )
+
 
 @app.route('/force-refresh-races')
 @login_required
@@ -603,21 +568,19 @@ def update_race_buttons_session():
                 time_match = re.search(r'(\d{2}:\d{2})', text)
                 time_str = time_match.group(1) if time_match else ""
                 
-                # 🔥 提取距离（支援中文 "米"）
+                # 🔥 正確距離提取
                 distance = 0
                 distance_patterns = [
-                    r'(\d+)\s*米',
-                    r'(\d+)\s*M\b',
-                    r'(\d{3,4})\s*[mM]\b',
+                    r'(\d+)\s*米',           # "1650 米"
+                    r'(\d+)\s*M\b',         # "1650 M" 
+                    r'(\d{3,4})\s*[mM]\b', # "1650m"
                 ]
-                
                 for pattern in distance_patterns:
-                    distance_match = re.search(pattern, text, re.IGNORECASE)
-                    if distance_match:
-                        distance = int(distance_match.group(1))
-                        logger.info(f"R{raceno} distance: {distance}m")
+                    match = re.search(pattern, text, re.IGNORECASE)
+                    if match:
+                        distance = int(match.group(1))
+                        logger.info(f"R{raceno} distance: {distance}m ✅")
                         break
-                
                 if distance == 0:
                     logger.warning(f"R{raceno} distance NOT found")
                 
@@ -643,7 +606,7 @@ def update_race_buttons_session():
                 logger.info(f"R{raceno}: {title}")
             
             time.sleep(0.2)
-        
+            
         except Exception as e:
             logger.warning(f"Failed to fetch race {raceno}: {e}")
             race_data[raceno] = {
@@ -658,7 +621,6 @@ def update_race_buttons_session():
     session['race_buttons'] = race_data
     session.modified = True
     logger.info(f"Session updated: {len(race_data)} races")
-
 
 @app.route('/api/update-buttons')
 def api_update_buttons():

@@ -309,6 +309,8 @@ a:hover {
     min-height: 0;
     border-radius: 12px;
     border: 1px solid rgba(42, 50, 66, 0.95);
+    width: 100% !important;  /* 加這行 */
+    max-width: none !important;  /* 取消限制 */
 }
 
 .table-base,
@@ -331,6 +333,7 @@ a:hover {
     padding: 11px 14px;
     border-bottom: 1px solid rgba(42, 50, 66, 0.95);
     vertical-align: top;
+    width: auto !important;  /* 自動分配空間 */
 }
 
 .table-base th,
@@ -440,21 +443,24 @@ a:hover {
 /* ============= HOME 頁面 ============= */
 .home-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
-    gap: 16px;
+    grid-template-columns: 1fr minmax(320px, 1fr);  /* 平衡版：右最少 320px，最大 1fr */
+    gap: 12px;
     align-items: start;
     min-height: 0;
 }
+.home-left {
+    min-width: 0;  /* 允許 table 內文字 wrap */
+    overflow: hidden;
+}
 
-.home-left,
-.home-right {
-    min-width: 0;
-    min-height: 0;
+.home-left .table-wrap {
+    max-width: 100%;
+    overflow-x: auto;  /* 水平滾動代替爆框 */
 }
 
 .home-right {
     display: grid;
-    gap: 16px;
+    gap: 10px;
 }
 
 .home-right .quad {
