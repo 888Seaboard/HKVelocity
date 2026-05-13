@@ -612,62 +612,50 @@ def force_refresh_races():
 @app.route("/race/<int:race_id>")
 @login_required
 def race_detail(race_id):
-    races_real, horses_real, trainers_real = load_real_data(
-        racedate="2026/05/13",
-        racecourse="HV",
-        raceno=race_id,
-        use_real=True,
-    )
-
-    if races_real:
-        race = races_real[0]
-        race_horses = []
-        for h in horses_real.values():
-            hh = dict(h)
-            hh["horse_id"] = hh.get("horse_id") or hh.get("id") or ""
-            hh["official_link"] = hh.get("official_link") or ""
-            race_horses.append(hh)
-        race_trainers = list(trainers_real.values())
-
-        summary = {
-            "race_no": f"第 {race_id} 場",
-            "class": race.get("class", ""),
-            "distance": f"{race.get('distance', '')}米" if race.get("distance") else "",
-            "title": race.get("title", "").split("-", 1)[-1].strip(),
-            "prize": f"獎金: {race.get('prize', '')}" if race.get("prize") else "",
-            "rating": f"評分: {race.get('rating', '')}" if race.get("rating") else "",
-        }
-        active_detail = {
-            "type": "race",
-            "title": race["title"],
-            "rows": [
-                ("場次", f"R{race_id}"),
-                ("賽事", race["title"]),
-            ],
-        }
-    else:
-        race, fallback_horses, fallback_trainers = make_dummy_race(race_id)
-        race_horses, race_trainers, summary, active_detail = build_race_detail(
-            race, fallback_horses, fallback_trainers
+    try:
+        races_real, horses_real, trainers_real = load_real_data(
+            racedate="2026/05/13",
+            racecourse="HV",
+            raceno=race_id,
+            use_real=True,
         )
 
-    topbar_links = []
+        if races_real:
+            race = races_real[0]
+            race_horses = []
+            for h in horses_real.values():
+                hh = dict(h)
+                hh["horse_id"] = hh.get("horse_id") or hh.get("id") or ""
+                hh["official_link"] = hh.get("official_link") or ""
+                race_horses.append(hh)
+            race_trainers = list(trainers_real.values())
+        else:
+            race, fallback_horses, fallback_trainers = make_dummy_race(race_id)
+            race_horses, race_trainers, summary, active_detail = build_race_detail(
+                race, fallback_horses, fallback_trainers
+            )
 
-    for h in race_horses:
-        print("HORSE:", h)
+        for h in race_horses:
+            print("HORSE:", h)
 
-    return render_template(
-        "race.html",
-        race=race,
-        race_horses=race_horses,
-        race_trainers=race_trainers,
-        summary=summary,
-        quick_races=[],
-        active_detail=active_detail,
-        topbar_links=topbar_links,
-        race_buttons=get_race_buttons(),
-        current_race=race_id,
-    )
+        topbar_links = []
+
+        return render_template(
+            "race.html",
+            race=race,
+            race_horses=race_horses,
+            race_trainers=race_trainers,
+            summary=summary,
+            quick_races=[],
+            active_detail=active_detail,
+            topbar_links=topbar_links,
+            race_buttons=get_race_buttons(),
+            current_race=race_id,
+        )
+
+    except Exception as e:
+        logger.exception("race_detail failed")
+        abort(500)
 
 
 
@@ -953,20 +941,20 @@ from urllib.parse import urlparse
 
 @app.route("/api/horse-detail")
 def api_horse_detail():
-    url = request.args.get("url", "").strip()
-    if not url:
-        return jsonify({"ok": False, "error": "missing url"}), 400
-
-    parsed = urlparse(url)
-    if "racing.hkjc.com" not in parsed.netloc:
-        return jsonify({"ok": False, "error": "invalid hkjc url"}), 400
-
     try:
+        url = request.args.get("url", "").strip()
+        if not url:
+            return jsonify({"ok": False, "error": "missing url"}), 400
+
+        parsed = urlparse(url)
+        if "racing.hkjc.com" not in parsed.netloc:
+            return jsonify({"ok": False, "error": "invalid hkjc url"}), 400
+
         resp = requests.get(
             url,
             timeout=20,
             headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+                "User-Agent": "Mozilla/5.0",
                 "Accept-Language": "zh-HK,zh;q=0.9,en;q=0.8",
             },
         )
@@ -995,28 +983,19 @@ def api_horse_detail():
         else:
             summary_lines = lines[:120]
 
-        summary = "\n".join(summary_lines[:120]).strip()
-
         return jsonify({
             "ok": True,
             "url": url,
             "title": page_title,
-            "summary": summary,
+            "summary": "\n".join(summary_lines[:120]).strip(),
         })
 
     except requests.exceptions.RequestException as e:
-        return jsonify({
-            "ok": False,
-            "url": url,
-            "error": f"HTTP error: {str(e)}",
-        }), 500
-
+        return jsonify({"ok": False, "error": f"HTTP error: {str(e)}"}), 500
     except Exception as e:
-        return jsonify({
-            "ok": False,
-            "url": url,
-            "error": f"Unexpected error: {str(e)}",
-        }), 500
+        logger.exception("api_horse_detail failed")
+        return jsonify({"ok": False, "error": f"Unexpected error: {str(e)}"}), 500
+    
 
 import json
 import os
