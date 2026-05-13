@@ -23,9 +23,18 @@
                         {% if race_horses %}
                             {% for horse in race_horses %}
                             <tr>
-                                <td class="wrap"><a href="/api/horse/{{ horse.name }}" target="_blank" style="color: var(--gold-bright); font-weight: 600; text-decoration: none;" title="查看 {{ horse.name }} 賽績（{{ horse.trainer }}）">{{ horse.name }} 🐎</a></td>
-                                <td class="wrap">{{ horse.jockey or '-' }}</td>  <!-- ✅ 騎師顯示 -->
-                                <td class="wrap"><a href="{{ url_for('trainer_detail', trainer_id=horse.trainer_id) }}">{{ horse.trainer }}</a></td>
+                                <td class="wrap">
+                                    <a href="#"
+                                       onclick="loadHorseInTopbar('{{ horse.horse_id }}', '{{ horse.name|e }}', '{{ horse.trainer|e }}'); return false;"
+                                       style="color: var(--gold-bright); font-weight: 600; text-decoration: none;"
+                                       title="查看 {{ horse.name }} 詳情（{{ horse.trainer }}）">
+                                        {{ horse.name }} 🐎
+                                    </a>
+                                </td>
+                                <td class="wrap">{{ horse.jockey or '-' }}</td>
+                                <td class="wrap">
+                                    <a href="{{ url_for('trainer_detail', trainer_id=horse.trainer_id) }}">{{ horse.trainer }}</a>
+                                </td>
                                 <td>{{ horse.draw }}</td>
                                 <td>{{ horse.weight }}</td>
                                 <td>{{ horse.rating }}</td>
@@ -43,21 +52,17 @@
         </section>
 
         <section class="quad quad-topbar">
-            <div class="panel-title">Topbar Links</div>
+            <div class="panel-title">馬匹詳情</div>
             <div class="detail-list">
-                {% for item in topbar_links %}
-                <div class="detail-row">
-                    <span>{{ item.label }}</span>
-                    <div>
-                        <a href="{{ url_for('open_topbar_link', url=item.url) }}">{{ item.desc }}</a>
-                    </div>
+                <div id="topbar-horse-info" style="padding:20px; color:#666;">
+                    點擊排位表馬名查看詳情
                 </div>
-                {% endfor %}
+                <div id="topbar-horse-summary" style="padding:20px; white-space:pre-wrap; color:#ddd; display:none;"></div>
             </div>
         </section>
 
         <section class="quad quad-race-detail">
-            <div class="panel-title">Active detail of race list / race buttons</div>
+            <div class="panel-title">Active detail of race list</div>
             {% if left_panel and left_panel.ok %}
             <div class="external-view">
                 <div class="external-title">{{ left_panel.title }}</div>
@@ -81,114 +86,54 @@
         </section>
 
         <section class="quad quad-topbar-detail" id="quad-topbar-detail">
-            <div class="panel-title" id="panel-title-topbar">
-                Active detail of topbar links
-                {% if browser_url %}
-                <button onclick="toggleFullscreen()" class="fullscreen-btn" title="Toggle Fullscreen">⛶</button>
-                {% endif %}
-            </div>
-            {% if browser_url %}
-            <div class="browser-toolbar">
-                <div class="browser-title">HKJC Browser</div>
-                <div class="browser-actions">
-                    <button onclick="reloadBrowser()" class="reload-btn">Reload</button>
-                    <a href="{{ browser_url.split('?url=')[1] if '?url=' in browser_url else '#' }}" target="_blank" class="open-link-btn">Open in new tab</a>
+            <div class="panel-title">馬匹摘要預覽</div>
+            <div class="detail-list">
+                <div id="horse-detail-box" class="external-view">
+                    <div class="external-title" id="horse-detail-title">未選擇馬匹</div>
+                    <div class="external-url" id="horse-detail-meta">點擊上方馬名載入 HKJC 資料</div>
+                    <pre class="external-body" id="horse-detail-body">等待中...</pre>
                 </div>
             </div>
-            <div class="browser-frame-wrapper" id="browser-wrapper">
-                <div class="browser-loading" id="browser-loading">Loading HKJC content...</div>
-                <iframe
-                    id="browser-frame"
-                    class="browser-frame"
-                    src="{{ browser_url }}"
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
-                    referrerpolicy="no-referrer"
-                    loading="lazy"
-                    onload="document.getElementById('browser-loading').style.display='none'"
-                    onerror="document.getElementById('browser-loading').innerHTML='Failed to load page'"
-                ></iframe>
-            </div>
-            <script>
-                let isFullscreen = false;
-                let originalParent = null;
-                let originalNextSibling = null;
-
-                function reloadBrowser() {
-                    const iframe = document.getElementById('browser-frame');
-                    document.getElementById('browser-loading').style.display = 'block';
-                    document.getElementById('browser-loading').innerHTML = 'Loading HKJC content...';
-                    iframe.src = iframe.src;
-                }
-
-                function toggleFullscreen() {
-                    const wrapper = document.getElementById('browser-wrapper');
-                    const section = document.getElementById('quad-topbar-detail');
-                    const btn = event.target;
-
-                    if (!isFullscreen) {
-                        // 進入全屏模式
-                        originalParent = wrapper.parentNode;
-                        originalNextSibling = wrapper.nextSibling;
-
-                        document.body.appendChild(wrapper);
-
-                        wrapper.style.position = 'fixed';
-                        wrapper.style.top = '0';
-                        wrapper.style.left = '0';
-                        wrapper.style.width = '100vw';
-                        wrapper.style.height = '100vh';
-                        wrapper.style.zIndex = '9999';
-                        wrapper.style.borderRadius = '0';
-                        wrapper.style.margin = '0';
-                        wrapper.style.padding = '0';
-
-                        btn.textContent = '⛶ Exit';
-                        btn.style.color = '#ff6b6b';
-                        isFullscreen = true;
-                    } else {
-                        // 退出全屏模式
-                        if (originalParent) {
-                            if (originalNextSibling) {
-                                originalParent.insertBefore(wrapper, originalNextSibling);
-                            } else {
-                                originalParent.appendChild(wrapper);
-                            }
-                        }
-
-                        wrapper.style.position = '';
-                        wrapper.style.top = '';
-                        wrapper.style.left = '';
-                        wrapper.style.width = '';
-                        wrapper.style.height = '';
-                        wrapper.style.zIndex = '';
-                        wrapper.style.borderRadius = '';
-                        wrapper.style.margin = '';
-                        wrapper.style.padding = '';
-
-                        btn.textContent = '⛶';
-                        btn.style.color = '';
-                        isFullscreen = false;
-                    }
-                }
-            </script>
-            {% elif right_panel %}
-            <div class="external-view">
-                <div class="external-title">{{ right_panel.title }}</div>
-                <div class="external-url">{{ right_panel.url }}</div>
-                {% if right_panel.ok %}
-                    {% if right_panel.body_text %}
-                        <pre class="external-body">{{ right_panel.body_text }}</pre>
-                    {% else %}
-                        <div class="detail-empty">No text content found on this page.</div>
-                    {% endif %}
-                {% else %}
-                    <div class="detail-empty">Fetch failed: {{ right_panel.error }}</div>
-                {% endif %}
-            </div>
-            {% else %}
-            <div class="detail-empty">Select a topbar link to view details.</div>
-            {% endif %}
         </section>
     </div>
 </div>
+
+<script>
+async function loadHorseInTopbar(horse_id, horse_name, trainer) {
+    const titleEl = document.getElementById('horse-detail-title');
+    const metaEl = document.getElementById('horse-detail-meta');
+    const bodyEl = document.getElementById('horse-detail-body');
+    const infoEl = document.getElementById('topbar-horse-info');
+    const summaryEl = document.getElementById('topbar-horse-summary');
+
+    titleEl.textContent = `🐎 ${horse_name}`;
+    metaEl.textContent = `Horse ID: ${horse_id} | 練馬師: ${trainer}`;
+    bodyEl.textContent = '載入中...';
+
+    infoEl.style.display = 'none';
+    summaryEl.style.display = 'block';
+    summaryEl.textContent = '載入中...';
+
+    try {
+        const res = await fetch(`/api/horse-detail/${encodeURIComponent(horse_id)}`);
+        const data = await res.json();
+
+        if (data.ok) {
+            const text = data.summary || '無摘要';
+            bodyEl.textContent = text;
+            summaryEl.textContent = text;
+        } else {
+            const errText = data.error || '載入失敗';
+            bodyEl.textContent = errText;
+            summaryEl.textContent = errText;
+        }
+    } catch (err) {
+        const errText = '載入失敗：' + err.message;
+        bodyEl.textContent = errText;
+        summaryEl.textContent = errText;
+    }
+
+    document.getElementById('quad-topbar-detail').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
 {% endblock %}

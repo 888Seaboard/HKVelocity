@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>馬匹統計 - HKG賽馬指數</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #204A88; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .win-rate { color: #d32f2f; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 馬匹統計面板</h1>
+        <p>總計 <b>{{ total_horses }}</b> 匹賽馬，覆蓋 {{ stats|length }} 個練馬師</p>
+        
+        <table>
+            <tr>
+                <th>練馬師</th>
+                <th>匹數</th>
+                <th>平均戰數</th>
+                <th>總勝仗</th>
+                <th>平均勝率</th>
+            </tr>
+            {% for stat in stats %}
+            <tr>
+                <td><b>{{ stat.trainer }}</b></td>
+                <td>{{ stat.horse_count }}</td>
+                <td>{{ stat.avg_races }}</td>
+                <td>{{ stat.total_wins }}</td>
+                <td class="win-rate">{{ stat.win_rate }}%</td>
+            </tr>
+            {% endfor %}
+        </table>
+        
+        <p>
+            <a href="/rebuild-horses" class="btn">🔄 重新爬取</a>
+            <a href="/search-horse" class="btn">🔍 馬匹搜尋</a>
+            <a href="/" class="btn">🏠 首頁</a>
+        </p>
+    </div>
+</body>
+</html>

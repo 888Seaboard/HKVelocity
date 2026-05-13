@@ -1,6 +1,8 @@
 from email.mime import text
 import os
 import logging
+import sqlite3
+import pandas as pd
 import db
 import threading
 import requests
@@ -30,6 +32,8 @@ from flask_login import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from playwright.sync_api import sync_playwright
+
+
 
 
 app = Flask(__name__, static_folder="static")
@@ -636,15 +640,18 @@ def race_detail(race_id):
             race, fallback_horses, fallback_trainers
         )
 
+    # 🔥 清空 Topbar Links（專用馬匹詳情）
+    topbar_links = []  
+
     return render_template(
         "race.html",
         race=race,
         race_horses=race_horses,
         race_trainers=race_trainers,
         summary=summary,
-        quick_races=[],  # 你之後可加
+        quick_races=[],
         active_detail=active_detail,
-        topbar_links=TOPBAR_LINKS,
+        topbar_links=topbar_links,  # ✅ 用上面定義嘅空陣列！
         race_buttons=get_race_buttons(),
         current_race=race_id,
     )
@@ -882,22 +889,27 @@ def trainer_detail(trainer_id):
 @login_required
 def horse_stats():
     """馬匹統計面板"""
-    import sqlite3
-    import db  # 用你現有 db
-    
-    conn = sqlite3.connect(db.DB_PATH)
-    stats = pd.read_sql_query("""
-        SELECT trainer, 
-               COUNT(*) as horse_count, 
-               ROUND(AVG(total_races),1) as avg_races, 
-               SUM(wins) as total_wins,
-               ROUND(AVG(wins)*100.0/NULLIF(total_races,0),1) as win_rate
-        FROM current_horses 
-        GROUP BY trainer 
-        ORDER BY horse_count DESC
-    """, conn)
-    conn.close()
-    return render_template('horse_stats.html', stats=stats.to_dict('records'), total_horses=len(db.search_horse('')))
+    try:
+        conn = sqlite3.connect(db.DB_PATH)
+        stats = pd.read_sql_query("""
+            SELECT trainer, 
+                   COUNT(*) as horse_count, 
+                   ROUND(AVG(total_races),1) as avg_races, 
+                   SUM(wins) as total_wins,
+                   ROUND(AVG(CASE WHEN total_races > 0 THEN wins*100.0/total_races ELSE 0 END),1) as win_rate
+            FROM current_horses 
+            GROUP BY trainer 
+            ORDER BY horse_count DESC
+        """, conn)
+        conn.close()
+        
+        total_horses = pd.read_sql_query("SELECT COUNT(*) as total FROM current_horses", sqlite3.connect(db.DB_PATH)).iloc[0]['total']
+        
+        return render_template('horse_stats.html', 
+                             stats=stats.to_dict('records'), 
+                             total_horses=total_horses)
+    except Exception as e:
+        return f"❌ 統計失敗：{str(e)}<br><a href='/'>← 首頁</a>"
 
 @app.route("/api/horse/<name>")
 @login_required
@@ -908,7 +920,86 @@ def api_horse(name):
     return jsonify(results)
 
 
+from flask import jsonify
+import requests
+from bs4 import BeautifulSoup
+import re
 
+def _clean_text(s):
+    if s is None:
+        return ""
+    s = re.sub(r"\s+", " ", str(s)).strip()
+    return s
+
+def _extract_rows_from_page(html):
+    soup = BeautifulSoup(html, "html.parser")
+    text = soup.get_text("\n", strip=True)
+    return text
+
+@app.route("/api/horse-detail/<horse_id>")
+def api_horse_detail(horse_id):
+    url = f"https://racing.hkjc.com/racing/information/Chinese/Horse/Horse.aspx?HorseId={horse_id}"
+
+    try:
+        resp = requests.get(
+            url,
+            timeout=20,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+                "Accept-Language": "zh-HK,zh;q=0.9,en;q=0.8"
+            }
+        )
+        resp.raise_for_status()
+
+        html = resp.text
+        text = _extract_rows_from_page(html)
+
+        soup = BeautifulSoup(html, "html.parser")
+        page_title = _clean_text(soup.title.get_text()) if soup.title else f"Horse {horse_id}"
+
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+        summary_lines = []
+        start_idx = None
+        for i, line in enumerate(lines):
+            if "馬匹近三季往績紀錄" in line:
+                start_idx = i
+                break
+
+        if start_idx is not None:
+            summary_lines.append(lines[start_idx])
+            for line in lines[start_idx + 1:]:
+                if "備註:" in line or "免責聲明:" in line:
+                    break
+                summary_lines.append(line)
+        else:
+            summary_lines = lines[:120]
+
+        summary = "\n".join(summary_lines[:120]).strip()
+
+        return jsonify({
+            "ok": True,
+            "horse_id": horse_id,
+            "url": url,
+            "title": page_title,
+            "summary": summary
+        })
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            "ok": False,
+            "horse_id": horse_id,
+            "url": url,
+            "error": f"HTTP error: {str(e)}"
+        }), 500
+
+    except Exception as e:
+        return jsonify({
+            "ok": False,
+            "horse_id": horse_id,
+            "url": url,
+            "error": f"Unexpected error: {str(e)}"
+        }), 500
 
 
 import json

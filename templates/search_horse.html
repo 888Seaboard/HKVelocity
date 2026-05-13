@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>馬匹搜尋 - HKG賽馬指數</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 即時馬匹搜尋 (1,351 匹)</h1>
+        
+        <input type="text" id="horse-search" placeholder="輸入馬名：占士德, 愛馬善, 好評如潮..." 
+               style="width:500px; padding:15px; font-size:16px;">
+        <button onclick="searchHorse()">搜尋</button>
+        
+        <div id="live-results" style="margin-top:20px;"></div>
+        
+        {% if results %}
+        <h3>✅ 精確搜尋「{{ query }}」：{{ results|length }} 匹</h3>
+        <table>
+            <tr><th>馬名</th><th>ID</th><th>練馬師</th><th>近績</th><th>勝仗</th><th>HKJC</th></tr>
+            {% for horse in results %}
+            <tr>
+                <td><b>{{ horse.horse_name }}</b></td>
+                <td>{{ horse.horse_id }}</td>
+                <td>{{ horse.trainer }}</td>
+                <td>{{ horse.recent_form }}</td>
+                <td>{{ horse.wins }}/{{ horse.total_races }}</td>
+                <td><a href="https://racing.hkjc.com/racing/information/Chinese/Horse/Horse.aspx?HorseId={{ horse.horse_id }}" target="_blank">查看</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+        
+        <p><a href="/horse-stats">📊 統計面板</a> | <a href="/">🏠 首頁</a></p>
+    </div>
+    
+    <script>
+    let timeout;
+    document.getElementById('horse-search').addEventListener('input', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            let name = this.value.trim();
+            if (name.length > 1) searchHorse(name);
+        }, 300);
+    });
+    
+    function searchHorse(name='') {
+        fetch(`/api/horse/${encodeURIComponent(name || '')}`)
+            .then(r => r.json())
+            .then(data => {
+                let html = '';
+                if (data.length) {
+                    html = `<h3>🔍 即時找到 ${data.length} 匹：</h3>
+                            ${data.slice(0,10).map(h => 
+                                `<div style="padding:8px; border-bottom:1px solid #eee;">
+                                    <a href="https://racing.hkjc.com/racing/information/Chinese/Horse/Horse.aspx?HorseId=${h.horse_id}" target="_blank">
+                                        ${h.horse_name} (${h.trainer})
+                                    </a> 
+                                    <small>${h.recent_form} ${h.wins}/${h.total_races}</small>
+                                </div>`
+                            ).join('')}`;
+                } else {
+                    html = '<p>❌ 暫無匹配，試其他馬名</p>';
+                }
+                document.getElementById('live-results').innerHTML = html;
+            });
+    }
+    </script>
+</body>
+</html>
