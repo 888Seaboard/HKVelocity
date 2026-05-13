@@ -1018,7 +1018,26 @@ def page_not_found(e):
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
+# 🔥 馬匹資料庫（放 app.py 末尾，if __name__ 前）
+from db import init_db, save_horses, search_horse
+
+init_db()  # 自動建 DB
+
+@app.route('/api/horse/<name>')
+def api_horse(name):
+    results = search_horse(name)
+    return jsonify(results)
+
+@app.route('/rebuild-horses')
+@login_required
+def rebuild_horses():
+    try:
+        from scraper import scrape_hkjc_horses
+        df = scrape_hkjc_horses(limit=50)  # 先爬 50 匹測試
+        save_horses(df.to_dict('records'))
+        return f"✅ 真實爬取 <b>{len(df)}</b> 匹 HKJC 馬！<br><a href='/race/9'>← 排位表</a>"
+    except Exception as e:
+        return f"❌ 爬取失敗：{str(e)}"
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
-

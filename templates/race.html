@@ -23,7 +23,7 @@
                         {% if race_horses %}
                             {% for horse in race_horses %}
                             <tr>
-                                <td class="wrap"><a href="{{ url_for('horse_detail', horse_id=horse.id) }}">{{ horse.name }}</a></td>
+                                <td class="wrap"><a href="/api/horse/{{ horse.name }}" target="_blank" style="color: var(--gold-bright); font-weight: 600; text-decoration: none;" title="查看 {{ horse.name }} 賽績（{{ horse.trainer }}）">{{ horse.name }} 🐎</a></td>
                                 <td class="wrap">{{ horse.jockey or '-' }}</td>  <!-- ✅ 騎師顯示 -->
                                 <td class="wrap"><a href="{{ url_for('trainer_detail', trainer_id=horse.trainer_id) }}">{{ horse.trainer }}</a></td>
                                 <td>{{ horse.draw }}</td>
