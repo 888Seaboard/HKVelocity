@@ -25,7 +25,7 @@
                             <tr>
                                 <td class="wrap">
                                     <a href="#"
-                                       onclick="loadHorseInTopbar('{{ horse.horse_id }}', '{{ horse.name|e }}', '{{ horse.trainer|e }}'); return false;"
+                                       onclick="loadHorseInTopbar('{{ horse.official_link or "" }}', '{{ horse.name|e }}', '{{ horse.trainer|e }}'); return false;"
                                        style="color: var(--gold-bright); font-weight: 600; text-decoration: none;"
                                        title="查看 {{ horse.name }} 詳情（{{ horse.trainer }}）">
                                         {{ horse.name }} 🐎
@@ -99,7 +99,14 @@
 </div>
 
 <script>
-async function loadHorseInTopbar(horse_id, horse_name, trainer) {
+async function loadHorseInTopbar(horse_link, horse_name, trainer) {
+    console.log('horse_link =', horse_link, 'horse_name =', horse_name, 'trainer =', trainer);
+
+    if (!horse_link) {
+        alert('horse_link is EMPTY');
+        return;
+    }
+
     const titleEl = document.getElementById('horse-detail-title');
     const metaEl = document.getElementById('horse-detail-meta');
     const bodyEl = document.getElementById('horse-detail-body');
@@ -107,7 +114,7 @@ async function loadHorseInTopbar(horse_id, horse_name, trainer) {
     const summaryEl = document.getElementById('topbar-horse-summary');
 
     titleEl.textContent = `🐎 ${horse_name}`;
-    metaEl.textContent = `Horse ID: ${horse_id} | 練馬師: ${trainer}`;
+    metaEl.textContent = `來源: ${horse_link} | 練馬師: ${trainer || '-'}`;
     bodyEl.textContent = '載入中...';
 
     infoEl.style.display = 'none';
@@ -115,7 +122,7 @@ async function loadHorseInTopbar(horse_id, horse_name, trainer) {
     summaryEl.textContent = '載入中...';
 
     try {
-        const res = await fetch(`/api/horse-detail/${encodeURIComponent(horse_id)}`);
+        const res = await fetch(`/api/horse-detail?url=${encodeURIComponent(horse_link)}`);
         const data = await res.json();
 
         if (data.ok) {

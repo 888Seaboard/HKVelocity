@@ -452,7 +452,14 @@ def make_dummy_race(race_id):
     return race, LOCAL_FALLBACK_HORSES, LOCAL_FALLBACK_TRAINERS
 
 def build_race_detail(race, horses_map, trainers_map):
-    race_horses = [horses_map[h_id] for h_id in race.get("horses", []) if h_id in horses_map]
+    race_horses = []
+    for h_id in race.get("horses", []):
+        if h_id in horses_map:
+            h = dict(horses_map[h_id])
+            h["horse_id"] = h.get("horse_id") or h.get("id") or ""
+            h["official_link"] = h.get("official_link") or ""
+            race_horses.append(h)
+
     race_trainers = []
     seen = set()
 
@@ -488,7 +495,6 @@ def build_race_detail(race, horses_map, trainers_map):
         ],
     }
     return race_horses, race_trainers, summary, active_detail
-
 
 def build_horse_detail(horse):
     return {
@@ -615,7 +621,12 @@ def race_detail(race_id):
 
     if races_real:
         race = races_real[0]
-        race_horses = list(horses_real.values())
+        race_horses = []
+        for h in horses_real.values():
+            hh = dict(h)
+            hh["horse_id"] = hh.get("horse_id") or hh.get("id") or ""
+            hh["official_link"] = hh.get("official_link") or ""
+            race_horses.append(hh)
         race_trainers = list(trainers_real.values())
 
         summary = {
@@ -640,8 +651,10 @@ def race_detail(race_id):
             race, fallback_horses, fallback_trainers
         )
 
-    # 🔥 清空 Topbar Links（專用馬匹詳情）
-    topbar_links = []  
+    topbar_links = []
+
+    for h in race_horses:
+        print("HORSE:", h)
 
     return render_template(
         "race.html",
@@ -651,7 +664,7 @@ def race_detail(race_id):
         summary=summary,
         quick_races=[],
         active_detail=active_detail,
-        topbar_links=topbar_links,  # ✅ 用上面定義嘅空陣列！
+        topbar_links=topbar_links,
         race_buttons=get_race_buttons(),
         current_race=race_id,
     )
@@ -936,9 +949,17 @@ def _extract_rows_from_page(html):
     text = soup.get_text("\n", strip=True)
     return text
 
-@app.route("/api/horse-detail/<horse_id>")
-def api_horse_detail(horse_id):
-    url = f"https://racing.hkjc.com/racing/information/Chinese/Horse/Horse.aspx?HorseId={horse_id}"
+from urllib.parse import urlparse
+
+@app.route("/api/horse-detail")
+def api_horse_detail():
+    url = request.args.get("url", "").strip()
+    if not url:
+        return jsonify({"ok": False, "error": "missing url"}), 400
+
+    parsed = urlparse(url)
+    if "racing.hkjc.com" not in parsed.netloc:
+        return jsonify({"ok": False, "error": "invalid hkjc url"}), 400
 
     try:
         resp = requests.get(
@@ -946,17 +967,16 @@ def api_horse_detail(horse_id):
             timeout=20,
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-                "Accept-Language": "zh-HK,zh;q=0.9,en;q=0.8"
-            }
+                "Accept-Language": "zh-HK,zh;q=0.9,en;q=0.8",
+            },
         )
         resp.raise_for_status()
 
         html = resp.text
-        text = _extract_rows_from_page(html)
-
         soup = BeautifulSoup(html, "html.parser")
-        page_title = _clean_text(soup.title.get_text()) if soup.title else f"Horse {horse_id}"
+        page_title = _clean_text(soup.title.get_text()) if soup.title else "Horse detail"
 
+        text = _extract_rows_from_page(html)
         lines = [line.strip() for line in text.splitlines() if line.strip()]
 
         summary_lines = []
@@ -979,28 +999,24 @@ def api_horse_detail(horse_id):
 
         return jsonify({
             "ok": True,
-            "horse_id": horse_id,
             "url": url,
             "title": page_title,
-            "summary": summary
+            "summary": summary,
         })
 
     except requests.exceptions.RequestException as e:
         return jsonify({
             "ok": False,
-            "horse_id": horse_id,
             "url": url,
-            "error": f"HTTP error: {str(e)}"
+            "error": f"HTTP error: {str(e)}",
         }), 500
 
     except Exception as e:
         return jsonify({
             "ok": False,
-            "horse_id": horse_id,
             "url": url,
-            "error": f"Unexpected error: {str(e)}"
+            "error": f"Unexpected error: {str(e)}",
         }), 500
-
 
 import json
 import os
