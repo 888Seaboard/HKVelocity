@@ -19,6 +19,13 @@ app.secret_key = os.environ.get("SECRET_KEY", "change-me-please")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from flask import send_from_directory
+
+# 在 app = Flask(__name__, static_folder='static') 下方加入此路由
+@app.route('/public/<path:filename>')
+def serve_public_files(filename):
+    return send_from_directory(os.path.join(app.root_path, 'public'), filename)
+
 login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)

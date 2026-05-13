@@ -1,11 +1,26 @@
 <!doctype html>
 <html lang="zh-Hant">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}HKVelocity{% endblock %}</title>
+    
+    <!-- 1. 方案 A 的極致相容性圖示連結 -->
+    <!-- 標準桌面瀏覽器圖示 -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
+
+    <!-- 蘋果 iOS 裝置 (iPhone/iPad 主畫面圖示) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+
+    <!-- 安卓裝置與行動裝置 PWA 應用程式設定 -->
+    <link rel="manifest" href="/public/site.webmanifest">
+
+    <!-- 2. 你原本的 CSS 樣式表檔案 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
     <div class="app-shell">
         <header class="topbar">
