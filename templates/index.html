@@ -3,22 +3,33 @@
 
 {% block content %}
 <div class="home-layout">
+    <!-- 🔥 賽事總覽 Header（內建 config bar，無 R1-R11）-->
     <section class="home-left">
-        <div class="page-title">賽事總覽</div>
+        <div class="page-title" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 2px solid var(--gold); margin-bottom: 24px;">
+            <h1 style="margin: 0; color: var(--gold);">賽事總覽</h1>
+            
+            <!-- 🔥 📅 當前狀態（右上角）-->
+            {% if config %}
+            <div style="display: flex; align-items: center; gap: 16px; background: var(--panel); padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                <span style="font-size: 16px; font-weight: bold; color: var(--gold);">📅 {{ config.default_date }}</span>
+                <span style="font-size: 14px; opacity: 0.9;">{{ config.default_course }}</span>
+                {% if config.auto_schedule %}
+                <span style="padding: 6px 12px; background: rgba(0,255,0,0.2); color: #4ade80; border-radius: 12px; font-size: 12px; font-weight: bold;">自動</span>
+                {% endif %}
+                <a href="{{ url_for('config_page') }}" style="padding: 8px 16px; background: var(--gold); color: var(--bg); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: bold;">⚙️</a>
+            </div>
+            {% endif %}
+        </div>
 
+        <!-- 🔥 原有搜尋 + 表（無 R1-R11）-->
         <div class="searchbar">
-            <form method="get" action="{{ url_for('home') }}" class="searchbar">
+            <form method="get" action="{{ url_for('home') }}">
                 <input type="text" name="q" value="{{ q }}" placeholder="Search race / course">
                 <select name="course">
-                    <option value="">All Courses</option>
+                    <option value="">All</option>
                     {% for c in courses %}
                     <option value="{{ c }}" {% if course == c %}selected{% endif %}>{{ c }}</option>
                     {% endfor %}
-                </select>
-                <select name="sort">
-                    <option value="id" {% if sort == 'id' %}selected{% endif %}>Sort by Race No</option>
-                    <option value="date" {% if sort == 'date' %}selected{% endif %}>Sort by Date</option>
-                    <option value="distance" {% if sort == 'distance' %}selected{% endif %}>Sort by Distance</option>
                 </select>
                 <button type="submit">Search</button>
             </form>
@@ -30,34 +41,21 @@
                     <tr>
                         <th>場次</th>
                         <th>級別</th>
-                        <th>距離</th>
-                        <th>評分</th>
-                        <th>參賽馬匹數量</th>
-                        <th>獎金</th>
+                        <th>場地</th>
+                        <th>日期</th>
+                        <th>時間</th>
                         <th>距離</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for r in races %}
-                    <tr>
-                        <td>
-                            {% if r.class or r.course or r.date or r.time or r.distance %}
-                                <a href="{{ url_for('race_detail', race_id=r.id) }}">R{{ r.id }}</a>
-                            {% else %}
-                                R{{ r.id }}
-                            {% endif %}
-                        </td>
-                        <td>{{ r.class }}</td>
+                    <tr onclick="window.open('{{ r.hkjc_url }}', '_blank')" style="cursor: pointer;">
+                        <td><a href="{{ url_for('race_detail', race_id=r.id) }}">R{{ r.id }}</a></td>
+                        <td>{{ r.class or '-' }}</td>
                         <td>{{ r.course }}</td>
                         <td>{{ r.date }}</td>
-                        <td>{{ r.time }}</td>
-                        <td>
-                            {% if r.distance %}
-                                {{ r.distance }}m
-                            {% else %}
-                                &nbsp;
-                            {% endif %}
-                        </td>
+                        <td>{{ r.time or 'TBA' }}</td>
+                        <td>{{ r.distance or '-' }}m</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -66,15 +64,14 @@
     </section>
 
     <aside class="home-right">
+        <!-- 🔥 只保留原有兩個 panel -->
         <div class="quad">
             <div class="panel-title">品題馬匹</div>
             <div class="detail-list">
-                {% for horse in featured_horses %}
+                {% for horse in featured_horses or [] %}
                 <div class="detail-row">
                     <span>{{ horse.name }}</span>
-                    <div>
-                        <a href="{{ url_for('horse_detail', horse_id=horse.id) }}">Open</a>
-                    </div>
+                    <div><a href="#">Open</a></div>
                 </div>
                 {% endfor %}
             </div>
@@ -83,14 +80,21 @@
         <div class="quad">
             <div class="panel-title">賽日備忘</div>
             <div class="detail-list">
-                {% for label, value in race_track_notes %}
+                {% for label, value in race_track_notes or [] %}
                 <div class="detail-row">
-                    <span>{{ label }}</span>
-                    <div>{{ value }}</div>
+                    <span>{{ label }}</span><div>{{ value }}</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
     </aside>
 </div>
+
+<script>
+function switchSchedule(idx) {
+    fetch(`/api/switch-schedule/${idx}`).then(r=>r.json()).then(data=>{
+        if(data.status==='ok') location.reload();
+    });
+}
+</script>
 {% endblock %}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>賽期設定 - HKVelocity</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { background: var(--bg, #0f1115); color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        .config-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 24px; background: var(--panel, #161a22); border-radius: 16px; margin-bottom: 32px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .header h1 { margin: 0; color: var(--gold, #ffd700); font-size: 32px; }
+        .btn-home { padding: 16px 32px; background: linear-gradient(135deg, var(--gold, #ffd700), gold); color: #000; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 18px; box-shadow: 0 8px 24px rgba(255,215,0,0.4); transition: all 0.3s; }
+        .btn-home:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,215,0,0.6); }
+        
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+        .panel { background: var(--panel, #161a22); padding: 32px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .panel h2 { margin-top: 0; color: var(--gold, #ffd700); border-bottom: 3px solid var(--gold, #ffd700); padding-bottom: 16px; font-size: 24px; }
+        
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: white; font-size: 16px; }
+        .form-group input, .form-group select { width: 100%; padding: 16px; background: var(--bg, #0f1115); border: 2px solid #444; border-radius: 12px; color: white; font-size: 18px; box-sizing: border-box; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--gold, #ffd700); outline: none; box-shadow: 0 0 0 3px rgba(255,215,0,0.2); }
+        
+        .btn-group { display: flex; gap: 16px; margin-top: 32px; }
+        .btn-primary { flex: 1; padding: 20px; background: linear-gradient(135deg, var(--gold, #ffd700), gold); color: #000; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 8px 24px rgba(255,215,0,0.4); transition: all 0.3s; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(255,215,0,0.6); }
+        .btn-secondary { flex: 1; padding: 20px; background: var(--bg, #0f1115); color: white; border: 2px solid var(--gold, #ffd700); border-radius: 12px; font-size: 18px; cursor: pointer; transition: all 0.3s; }
+        .btn-secondary:hover { background: var(--gold, #ffd700); color: #000; transform: translateY(-2px); }
+        
+        .schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 24px; }
+        .schedule-card { padding: 24px 20px; background: var(--bg, #0f1115); border: 2px solid #555; border-radius: 16px; cursor: pointer; text-align: center; transition: all 0.3s; font-weight: bold; }
+        .schedule-card:hover { border-color: var(--gold, #ffd700); background: rgba(255,215,0,0.1); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(255,215,0,0.3); }
+        .schedule-name { font-size: 18px; color: white; margin-bottom: 8px; }
+        .schedule-date { font-size: 16px; color: var(--gold, #ffd700); }
+        .schedule-course { font-size: 14px; opacity: 0.8; }
+        
+        .links-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 40px; max-height: 500px; overflow-y: auto; padding: 24px 0; }
+        .link-card { padding: 20px; background: var(--bg, #0f1115); border: 2px solid #555; border-radius: 12px; text-decoration: none; color: white; transition: all 0.3s; display: block; }
+        .link-card:hover { border-color: var(--gold, #ffd700); background: rgba(255,215,0,0.1); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,215,0,0.3); }
+        .link-race { font-size: 24px; font-weight: bold; color: var(--gold, #ffd700); margin-bottom: 4px; }
+        .link-title { font-size: 14px; opacity: 0.9; }
+        
+        @media (max-width: 768px) {
+            .config-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 16px; text-align: center; }
+            .btn-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="config-container">
+    <!-- 🔥 Header -->
+    <div class="header">
+        <h1>🏁 賽期設定</h1>
+        <a href="{{ url_for('home') }}" class="btn-home">🏠 回首頁</a>
+    </div>
+
+    <div class="config-grid">
+        <!-- 🔥 基本設定 -->
+        <div class="panel">
+            <h2>基本設定</h2>
+            <div class="form-group">
+                <label>📅 預設日期</label>
+                <input id="date" value="{{ config.default_date or '' }}" placeholder="YYYY/MM/DD">
+            </div>
+            <div class="form-group">
+                <label>🏟️ 場地</label>
+                <select id="course">
+                    <option value="ST" {% if config.default_course == 'ST' %}selected{% endif %}>沙田 (ST)</option>
+                    <option value="HV" {% if config.default_course == 'HV' %}selected{% endif %}>跑馬地 (HV)</option>
+                </select>
+            </div>
+            <div class="btn-group">
+                <button onclick="saveConfig()" class="btn-primary">💾 保存設定</button>
+                <button onclick="autoUpdate()" class="btn-secondary">🔄 自動更新</button>
+            </div>
+        </div>
+
+        <!-- 🔥 賽期表 -->
+        {% if config.schedule %}
+        <div class="panel">
+            <h2>📋 賽期表 (點擊切換)</h2>
+            <div class="schedule-grid">
+                {% for day in config.schedule %}
+                <div class="schedule-card" onclick="switchSchedule({{ loop.index0 }})">
+                    <div class="schedule-name">{{ day.name }}</div>
+                    <div class="schedule-date">{{ day.date }}</div>
+                    <div class="schedule-course">{{ day.course }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 🔥 Link -->
+    <div class="panel">
+        <h2>🔗 Race 1 - Race11 直達 Link</h2>
+        <div class="links-grid">
+            {% for link in race_links %}
+            <a href="{{ link.url }}" target="_blank" class="link-card">
+                <div class="link-race">Race {{ link.race_no }}</div>
+                <div class="link-title">{{ link.title }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+function saveConfig() {
+    const config = {
+        default_date: document.getElementById('date').value,
+        default_course: document.getElementById('course').value
+    };
+    fetch('/config', {method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(config)})
+    .then(r=>r.json()).then(data=>{
+        if(data.status==='success') alert('✅ 保存成功！'); 
+        location.reload();
+    });
+}
+
+function switchSchedule(idx) {
+    fetch(`/api/switch-schedule/${idx}`).then(r=>r.json()).then(data=>{
+        if(data.status==='ok') alert(`✅ 切換：${data.date} ${data.course}`);
+        location.reload();
+    });
+}
+
+function autoUpdate() {
+    fetch('/force-refresh-races').then(()=>alert('✅ 更新完成！')).then(()=>location.reload());
+}
+</script>
+</body>
+</html>

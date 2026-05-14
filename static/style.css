@@ -1121,3 +1121,45 @@ a:hover {
     border: 1px solid var(--gold-border);
     box-shadow: var(--shadow-sm);
 }
+
+.schedule-tabs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tab-btn {
+    padding: 6px 12px;
+    background: var(--bg);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.tab-btn:hover, .tab-btn.active {
+    background: var(--gold);
+    color: var(--bg);
+}
+
+.quick-race-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--panel);
+    border-radius: 8px;
+}
+
+.quick-link {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+}
+
+.config-status .detail-row strong {
+    color: var(--gold) !important;
+}

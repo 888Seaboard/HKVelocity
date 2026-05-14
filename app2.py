@@ -104,17 +104,54 @@ def slugify_trainer(name):
 # ─────────────────────────────────────
 
 
+# 🔥 取代原有 load_config() + 新增 auto_schedule()
 def load_config():
     config_path = os.path.join(os.path.dirname(__file__), "config.json")
+    default_config = {
+        "default_date": "2026/05/17",
+        "default_course": "ST", 
+        "schedule": []
+    }
     try:
         with open(config_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        logger.warning("config.json not found, using default config")
-        return get_default_config()
-    except Exception as e:
-        logger.error(f"Failed to load config: {e}")
-        return get_default_config()
+            config = json.load(f)
+            config.setdefault("default_date", default_config["default_date"])
+            config.setdefault("default_course", default_config["default_course"])
+            return config
+    except:
+        # 自動生成
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(default_config, f, ensure_ascii=False, indent=2)
+        logger.info("✅ 新建 config.json")
+        return default_config
+
+def generate_race_links(config):
+    """根據 config 自動生成所有 R1-R11 link"""
+    links = []
+    default_date = config.get("default_date", "2026/05/17")
+    default_course = config.get("default_course", "ST")
+    
+    for i in range(1, 12):
+        link = f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={default_date}&Racecourse={default_course}&RaceNo={i}"
+        links.append({
+            "race_no": i,
+            "url": link,
+            "title": f"R{i} - {default_date} {default_course}"
+        })
+    return links
+
+# 🔥 新增 config 編輯頁 route
+@app.route("/config", methods=["GET", "POST"])
+@login_required
+def config_page():
+    config = load_config()
+    if request.method == "POST":
+        new_config = request.get_json() or {}
+        config.update(new_config)
+        save_config(config)
+        return jsonify({"status": "success", "config": config})
+    
+    return render_template("config.html", config=config, race_links=generate_race_links(config))
 
 
 def get_default_config():
@@ -146,6 +183,43 @@ def save_config(config):
     except Exception as e:
         logger.error(f"❌ Failed to save config: {e}")
         return False
+
+def auto_update_schedule():
+    """自動從 fixture 頁抓最新賽期，更新 config.schedule"""
+    config = load_config()
+    if not config.get("auto_schedule", False):
+        return
+    
+    try:
+        resp = requests.get("https://racing.hkjc.com/zh-hk/local/information/fixture", timeout=10)
+        soup = BeautifulSoup(resp.text, "html.parser")
+        text = soup.get_text()
+        
+        # 解析日期模式 (改進版)
+        dates = []
+        date_patterns = [
+            r"(\d{1,2})[月\/\-\s]+(\w+)[日賽]",
+            r"(\d{1,2})[月\/\-\s]+(\d{1,2})[日賽]"
+        ]
+        
+        for pattern in date_patterns:
+            matches = re.finditer(pattern, text)
+            for match in matches:
+                day = match.group(1)
+                course = match.group(2) if len(match.groups()) > 1 else "ST"
+                dates.append({
+                    "date": f"2026/05/{day.zfill(2)}",
+                    "course": "ST" if "沙田" in text else "HV",
+                    "name": f"5/{day} 賽事"
+                })
+        
+        if dates:
+            config["schedule"] = dates[:5]  # 取最近5場
+            save_config(config)
+            logger.info(f"✅ 自動更新賽期：{len(dates)} 場")
+            
+    except Exception as e:
+        logger.warning(f"自動賽期失敗：{e}")
 
 
 # ─────────────────────────────────────
@@ -560,35 +634,51 @@ def logout():
 @app.route("/")
 @login_required
 def home():
-    race_buttons = get_race_buttons()
+    config = load_config()  # 🔥 config 控制
+    
+    # 🔥 用 config 刷新賽事按鈕（支援沙田 5/17）
+    session["config_date"] = config.get("default_date", "2026/05/17")
+    session["config_course"] = config.get("default_course", "ST")
+    
+    race_buttons = get_race_buttons()  # 自動用 session config
+    
     races = []
     for n in range(1, 12):
         btn = race_buttons.get(n)
-
-        # 防止 None
+        
+        # 防止 None，用 config fallback
         if btn is None:
-            btn = {}
-
-        races.append(
-            {
-                "id": n,
-                "title": btn.get("title", f"第 {n} 場"),
-                "class": btn.get("class", ""),
-                "time": btn.get("time", ""),
-                "distance": btn.get("distance", ""),
-                "course": btn.get("course", "HV"),
-                "date": btn.get("date", "2026-05-13"),
+            btn = {
+                "title": f"第 {n} 場",
+                "course": config.get("default_course", "ST"),
+                "date": config.get("default_date", "2026/05/17")
             }
-        )
-
+        
+        races.append({
+            "id": n,
+            "title": btn.get("title", f"第 {n} 場"),
+            "class": btn.get("class", ""),
+            "time": btn.get("time", ""),
+            "distance": btn.get("distance", ""),
+            "course": btn.get("course", config.get("default_course", "ST")),  # 🔥 config
+            "date": btn.get("date", config.get("default_date", "2026/05/17")),  # 🔥 config
+            "hkjc_url": f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={config.get('default_date', '2026/05/17')}&Racecourse={config.get('default_course', 'ST')}&RaceNo={n}"  # 🔥 自動 link
+        })
+    
     q = request.args.get("q", "").strip().lower()
     filtered = [r for r in races if q in r.get("title", "").lower()] if q else races
-
+    
     courses = sorted(set(r.get("course", "") for r in races))
-
+    
+    # 🔥 傳 config + 自動生成 link + 賽期表
+    race_links = generate_race_links(config)
+    
     return render_template(
         "index.html",
         races=filtered,
+        config=config,           # 🔥 config 設定
+        race_links=race_links,   # 🔥 R1-R11 直達 link
+        schedule=config.get("schedule", []),  # 🔥 賽期切換
         q=q,
         courses=courses,
         topbar_links=TOPBAR_LINKS,
@@ -1009,6 +1099,10 @@ def save_horses(horses_list):
         json.dump(horses_list, f, ensure_ascii=False, indent=2)
     logger.info(f"✅ 已儲存 {len(horses_list)} 匹馬到 {path}")
     return True
+
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
