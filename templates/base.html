@@ -43,10 +43,10 @@
             <!-- 中間：R1–R11 Race 按鈕 -->
             <div class="topbar-center">
                 {% for n in range(1, 12) %}
-                <a class="race-btn {% if request.endpoint == 'race_detail' and request.view_args.get('race_id') == n %}active{% endif %}"
-                   href="{{ url_for('race_detail', race_id=n) }}">R{{ n }}</a>
-                {% endfor %}
-            </div>
+                <a class="race-btn {% if request.endpoint == 'race_detail' and request.view_args and request.view_args.get('race_id') == n %}active{% endif %}"
+                href="{{ url_for('race_detail', race_id=n) }}">R{{ n }}</a>
+             {% endfor %}
+           </div>
 
             <!-- 🔥 右邊：導航按鈕群（完整修復版） -->
             <div class="topbar-right">

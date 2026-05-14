@@ -19,7 +19,7 @@
             <thead>
                 <tr>
                     <th>途程</th>
-                    <th>G1/1班</th>
+                    <th>1班</th>
                     <th>2班</th>
                     <th>3班</th>
                     <th>4班</th>
@@ -27,17 +27,17 @@
                 </tr>
             </thead>
             <tbody>
-                {% for dist, times in standards.items() %}
-                <tr {% if dist == 1200 %}class="highlight"{% endif %}>
-                    <td><strong>{{ dist }}m</strong></td>
-                    <td>{{ times.class1 or '-' }}</td>
-                    <td>{{ times.class2 or '-' }}</td>
-                    <td>{{ times.class3 or '-' }}</td>
-                    <td>{{ times.class4 or '-' }}</td>
-                    <td>{{ times.class5 or '-' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
+             {% for dist_key, times in standards.items() %}
+             <tr {% if '1200' in dist_key %}class="highlight"{% endif %}>
+             <td><strong>{{ dist_key }}</strong></td>
+               <td>{{ times['1'] or '-' }}</td>  <!-- 🔥 改呢行 -->
+               <td>{{ times['2'] or '-' }}</td>  <!-- 🔥 改呢行 -->
+               <td>{{ times['3'] or '-' }}</td>  <!-- 🔥 改呢行 -->
+               <td>{{ times['4'] or '-' }}</td>  <!-- 🔥 改呢行 -->
+               <td>{{ times['5'] or '-' }}</td>  <!-- 🔥 改呢行 -->
+             </tr>
+             {% endfor %}
+</tbody>
         </table>
     </div>
 
@@ -93,11 +93,8 @@ function calculatePace() {
     const cls = document.getElementById('class-select').value;
     const actualTime = document.getElementById('actual-time').value.trim();
     
-    const stdTime = standardsData[dist]?.[cls];
-    if (!stdTime) {
-        document.getElementById('pace-result').innerHTML = '<span class="detail-empty">❌ 找不到標準時間</span>';
-        return;
-    }
+    const classMap = {"class1": "1", "class2": "2", "class3": "3", "class4": "4", "class5": "5"};
+    const stdTime = standardsData[dist_key]?.[classMap[cls]];
     
     const rating = computePaceRating(stdTime, actualTime);
     const status = rating > 0 ? '🟢 快於標準' : '🔴 慢於標準';

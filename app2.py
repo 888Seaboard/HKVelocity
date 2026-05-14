@@ -343,61 +343,41 @@ def parse_racecard_page(html, racedate="2026/05/13", racecourse="HV", raceno=Non
 # ─────────────────────────────────────
 
 
-def fetch_race_info(raceno, racedate="2026/05/13", racecourse="HV"):
-    """單場賽事資訊，統一輸出格式： title, time, distance, class, course, date"""
+def fetch_race_info(raceno, racedate="2026/05/17", racecourse="ST"):
     params = {
         "racedate": racedate.replace("-", "/"),
         "Racecourse": racecourse,
         "RaceNo": raceno,
     }
     try:
-        resp = requests.get(
-            BASE_RACECARD_URL,
-            params=params,
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
-            timeout=10,
-        )
+        resp = requests.get(BASE_RACECARD_URL, params=params, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}, timeout=15)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
 
+        # 🔥 改進解析（對應真頁面）
         race_div = soup.find("div", class_="f_fs13", style="line-height: 20px;")
         if race_div:
-            text = race_div.get_text(strip=True)
+            text = race_div.get_text(" ", strip=True)
+            print(f"DEBUG R{raceno} text: {text[:200]}...")  # 除錯
+            
+            # title - 匹配 "第 2 場 - 象山讓賽"
+            title_match = re.search(r"第\s+\d+\s*場\s*[-\s]*(.+?)(?=\s+20\d{2}|\s+草地|\s+獎金|$)", text)
+            title = f"第 {raceno} 場" if not title_match else f"第 {raceno} 場 - {title_match.group(1).strip()}"
+            
+            # time - 匹配 "13:15"
+            time_match = re.search(r"(\d{1,2}:\d{2})", text)
+            time_str = time_match.group(1) if time_match else "TBA"
+            
+            # distance - 匹配 "1000米"
+            distance_match = re.search(r"(\d{3,4})\s*米", text)
+            distance = int(distance_match.group(1)) if distance_match else 1200
+            
+            # class - 匹配 "第四班"
+            class_match = re.search(r"(第[一二三四五]班|Class\s*\d+)", text)
+            race_class = class_match.group(1).strip() if class_match else "第四班"
 
-            # title
-            match = re.search(r"第\s*(\d+)\s*場\s*[-\s]*(.+?)(?=\s+\w{3,}\s+\d{4}|\s+Turf|\s+All Weather|$)", text)
-            title = f"第 {raceno} 場" if not match else f"第 {raceno} 場 - {match.group(2).strip()}"
-
-            # time
-            time_match = re.search(r"(\d{2}:\d{2})", text)
-            time_str = time_match.group(1) if time_match else ""
-
-            # distance
-            distance = 0
-            patterns = [r"(\d+)\s*米", r"(\d+)\s*M\b", r"(\d{3,4})\s*[mM]\b"]
-            for p in patterns:
-                m = re.search(p, text, re.IGNORECASE)
-                if m:
-                    distance = int(m.group(1))
-                    break
-
-            # class
-            race_class = ""
-            class_match = re.search(r"(?:Class\s*([1-5])|第\s*([一二三四五])\s*班|([一二三四五])班)", text, re.IGNORECASE)
-            if class_match:
-                cls = class_match.group(1) or class_match.group(2) or class_match.group(3)
-                if cls in ["1", "2", "3", "4", "5"]:
-                    race_class = f"第{cls}班"
-                else:
-                    mapping = {
-                        "一": "第一班",
-                        "二": "第二班",
-                        "三": "第三班",
-                        "四": "第四班",
-                        "五": "第五班",
-                    }
-                    race_class = mapping.get(cls, "")
-
+            logger.info(f"R{raceno}: {title} {time_str} {distance}m {race_class}")
+            
             return {
                 "id": raceno,
                 "title": title,
@@ -408,24 +388,24 @@ def fetch_race_info(raceno, racedate="2026/05/13", racecourse="HV"):
                 "date": racedate.replace("/", "-"),
             }
     except Exception as e:
-        logger.warning(f"Failed to fetch race {raceno}: {e}")
+        logger.error(f"R{raceno} 錯誤: {e}")
 
     return {
         "id": raceno,
         "title": f"第 {raceno} 場",
-        "time": "",
-        "distance": "",
-        "class": "",
-        "course": "",
-        "date": "",
+        "time": "TBA",
+        "distance": 1200,
+        "class": "第四班",
+        "course": racecourse,
+        "date": racedate.replace("/", "-"),
     }
 
 
-def load_all_race_buttons_from_hkjc():
-    """一鍵抓 R1–R11 賽事標題，用於首頁按鈕，同時存入 session"""
+def load_all_race_buttons_from_hkjc(date="2026/05/17", course="ST"):  # 🔥 加 date/course 參數
+    """用指定日期/場地抓 R1–R11"""
     data = {}
     with ThreadPoolExecutor(max_workers=5) as exe:
-        futures = [exe.submit(fetch_race_info, i) for i in range(1, 12)]
+        futures = [exe.submit(fetch_race_info, i, date, course) for i in range(1, 12)]  # 🔥 傳 date/course
         for future in futures:
             r = future.result(timeout=15)
             if r:
@@ -433,19 +413,28 @@ def load_all_race_buttons_from_hkjc():
 
     session["race_buttons"] = data
     session["race_buttons_updated_at"] = datetime.datetime.now().isoformat()
+    session["config_date"] = date
+    session["config_course"] = course
     session.modified = True
+    logger.info(f"✅ 刷新按鈕：{date} {course}")
     return data
 
 
 def get_race_buttons():
-    """從 session 拿，自動刷新如果過舊（例如超過 5 分鐘）"""
+    """從 session 拿，自動用 config 刷新"""
+    config = load_config()  # 🔥 新增 config
+    
+    # 🔥 用 config date/course
+    session_date = session.get("config_date", config["default_date"])
+    session_course = session.get("config_course", config["default_course"])
+    
     if "race_buttons" not in session or "race_buttons_updated_at" not in session:
-        return load_all_race_buttons_from_hkjc()
-
+        return load_all_race_buttons_from_hkjc(session_date, session_course)
+    
     ts = datetime.datetime.fromisoformat(session["race_buttons_updated_at"])
     if datetime.datetime.now() - ts > datetime.timedelta(minutes=5):
-        return load_all_race_buttons_from_hkjc()
-
+        return load_all_race_buttons_from_hkjc(session_date, session_course)
+    
     return session["race_buttons"]
 
 
@@ -703,32 +692,58 @@ def force_refresh_races():
 @login_required
 def race_detail(race_id):
     try:
+        config = load_config()  # 🔥 用 config
+        
+        # 🔥 自動用 config date/course
         races_real, horses_real, trainers_real = load_real_data(
-            racedate="2026/05/13",
-            racecourse="HV",
+            racedate=config.get("default_date", "2026/05/13"),
+            racecourse=config.get("default_course", "HV"),
             raceno=race_id,
             use_real=True,
         )
 
-        if races_real:
+        if races_real and races_real[0]:  # 🔥 確保有資料
             race = races_real[0]
             race_horses = []
-            for h in horses_real.values():
+            for h_id, h in horses_real.items():
                 hh = dict(h)
-                hh["horse_id"] = hh.get("horse_id") or hh.get("id") or ""
-                hh["official_link"] = hh.get("official_link") or ""
+                hh["horse_id"] = hh.get("id", h_id)
+                hh["official_link"] = f"https://racing.hkjc.com/zh-hk/local/information/horse?horseNo={h.get('no', h_id)}"
                 race_horses.append(hh)
             race_trainers = list(trainers_real.values())
         else:
+            # Fallback
             race, fallback_horses, fallback_trainers = make_dummy_race(race_id)
             race_horses, race_trainers, summary, active_detail = build_race_detail(
                 race, fallback_horses, fallback_trainers
             )
 
-        for h in race_horses:
-            print("HORSE:", h)
+        # 🔥 建 summary + active_detail
+        summary = {
+            "race_no": race.get("id", race_id),
+            "title": race.get("title", f"第 {race_id} 場"),
+            "class": race.get("class", ""),
+            "course": config.get("default_course", "ST"),  # 🔥 config
+            "date": config.get("default_date", "2026/05/17"),  # 🔥 config
+            "time": race.get("time", ""),
+            "distance": race.get("distance", ""),
+            "horse_count": len(race_horses),
+        }
+        
+        active_detail = {
+            "type": "race",
+            "title": race.get("title", f"R{race_id}"),
+            "rows": [
+                ("場次", f"R{race_id}"),
+                ("日期", config.get("default_date", "2026/05/17")),
+                ("場地", config.get("default_course", "ST")),
+                ("級別", race.get("class", "")),
+                ("距離", f"{race.get('distance', 0)}m"),
+                ("馬匹", str(len(race_horses))),
+            ]
+        }
 
-        topbar_links = []
+        logger.info(f"✅ R{race_id} 載入：{config.get('default_date')} {config.get('default_course')}")
 
         return render_template(
             "race.html",
@@ -736,17 +751,16 @@ def race_detail(race_id):
             race_horses=race_horses,
             race_trainers=race_trainers,
             summary=summary,
-            quick_races=[],
+            config=config,  # 🔥 傳 config
             active_detail=active_detail,
-            topbar_links=topbar_links,
+            topbar_links=TOPBAR_LINKS,
             race_buttons=get_race_buttons(),
             current_race=race_id,
         )
 
     except Exception as e:
-        logger.exception("race_detail failed")
-        abort(500)
-
+        logger.exception(f"race_detail R{race_id} 失敗")
+        return f"<h1>❌ R{race_id} 載入失敗</h1><p>{str(e)}</p><a href='/'>← 首頁</a>", 500
 
 
 @app.route("/standards")
@@ -774,12 +788,7 @@ def api_standards():
 @login_required
 def refresh_standards():
     standards = fetch_standard_times()
-    return jsonify({
-        "status": "success",
-        "count": len(standards),
-        "message": f"刷新完成 {len(standards)} 組途程",
-        "data": standards
-    })
+    return redirect(url_for('standards'))  # 🔥 改 redirect 返頁面！
 
 
 
@@ -1086,6 +1095,14 @@ def api_horse_detail():
         logger.exception("api_horse_detail failed")
         return jsonify({"ok": False, "error": f"Unexpected error: {str(e)}"}), 500
     
+
+@app.route("/calculator")
+@login_required
+def calculator():
+    """投注計算器"""
+    return render_template("calculator.html", topbar_links=TOPBAR_LINKS)
+
+
 
 import json
 import os
