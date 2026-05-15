@@ -16,7 +16,8 @@
                             <th>檔位</th>
                             <th>負磅</th>
                             <th>評分</th>
-                            <th>形勢</th>
+                            <th>近績</th>
+                            <th>配備</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -39,6 +40,7 @@
                                 <td>{{ horse.weight }}</td>
                                 <td>{{ horse.rating }}</td>
                                 <td class="wrap">{{ horse.form }}</td>
+                                <td>{{ horse.gear or '-' }}</td>  <!-- 🔥 新增配備列 -->
                             </tr>
                             {% endfor %}
                         {% else %}

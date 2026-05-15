@@ -336,6 +336,22 @@ def parse_racecard_page(html, racedate="2026/05/13", racecourse="HV", raceno=Non
 
     return races, parsed_horses, parsed_trainers
 
+def pad_race_horses(horses, size=14):
+    padded = horses[:size]
+    while len(padded) < size:
+        padded.append({
+            "name": "",
+            "jockey": "",
+            "trainer": "",
+            "draw": "",
+            "weight": "",
+            "rating": "",
+            "form": "",
+            "gear": "",
+            "official_link": "",
+        })
+    return padded
+
 
 # ─────────────────────────────────────
 # Data loading & model service
@@ -421,19 +437,32 @@ def load_all_race_buttons_from_hkjc(date="2026/05/17", course="ST"):  # 🔥 加
 
 
 def get_race_buttons():
-    """從 session 拿，自動用 config 刷新"""
-    config = load_config()  # 🔥 新增 config
+    config = load_config()
     
-    # 🔥 用 config date/course
-    session_date = session.get("config_date", config["default_date"])
-    session_course = session.get("config_course", config["default_course"])
+    # 🔥 強制用最新 config
+    session_date = config["default_date"]  # 永遠用 config，唔用舊 session
+    session_course = config["default_course"]
     
-    if "race_buttons" not in session or "race_buttons_updated_at" not in session:
-        return load_all_race_buttons_from_hkjc(session_date, session_course)
+    # 🔥 永久 cache，只在 config 變更時重抓
+    cache_key = f"{session_date}_{session_course}"
+    if "race_buttons_cache" not in session or session["race_buttons_cache"] != cache_key:
+        logger.info(f"🔄 重抓按鈕：{cache_key}")
+        buttons = load_all_race_buttons_from_hkjc(session_date, session_course)
+        session["race_buttons"] = buttons
+        session["race_buttons_cache"] = cache_key
+        session["race_buttons_updated_at"] = datetime.datetime.now().isoformat()
+        session.modified = True
+        return buttons
     
+    # 檢查 30分鐘過期
     ts = datetime.datetime.fromisoformat(session["race_buttons_updated_at"])
-    if datetime.datetime.now() - ts > datetime.timedelta(minutes=5):
-        return load_all_race_buttons_from_hkjc(session_date, session_course)
+    if datetime.datetime.now() - ts > datetime.timedelta(minutes=30):
+        logger.info(f"⏰ 過期重抓：{cache_key}")
+        buttons = load_all_race_buttons_from_hkjc(session_date, session_course)
+        session["race_buttons"] = buttons
+        session["race_buttons_updated_at"] = datetime.datetime.now().isoformat()
+        session.modified = True
+        return buttons
     
     return session["race_buttons"]
 
@@ -585,6 +614,44 @@ def build_trainer_detail(trainer, trainer_horses):
         ],
     }
 
+def load_race_horses_from_db(race_id, config_date, config_course):
+    """用你爬好嘅 SQLite 資料庫！"""
+    try:
+        import sqlite3
+        conn = sqlite3.connect(db.DB_PATH)
+        
+        # 🔥 模擬 race_horses，從 DB 取真實馬
+        horses = pd.read_sql_query("""
+            SELECT * FROM current_horses 
+            ORDER BY total_wins DESC, rating DESC 
+            LIMIT 14
+        """, conn).to_dict('records')
+        
+        conn.close()
+        
+        # 補齊 race 字段
+        race_horses = []
+        for i, h in enumerate(horses, 1):
+            race_horses.append({
+                "id": i,
+                "name": h.get("name", "無名"),
+                "jockey": h.get("jockey", "待定"),
+                "trainer": h.get("trainer", "待定"),
+                "draw": i,
+                "weight": f"{h.get('weight', 126)}",
+                "rating": h.get("rating", 60),
+                "form": h.get("form", "1-2-3"),
+                "gear": h.get("gear", "B"),
+                "official_link": f"https://racing.hkjc.com/zh-hk/local/information/horse?HorseNo={h.get('horse_no', i)}"
+            })
+        
+        logger.info(f"✅ DB 載入 {len(race_horses)} 匹真馬")
+        return [{"title": f"R{race_id} - 沙田 {config_date}"}], {h['id']: h for h in race_horses}, {}
+        
+    except Exception as e:
+        logger.error(f"DB 失敗：{e}")
+        return [], LOCAL_FALLBACK_HORSES, LOCAL_FALLBACK_TRAINERS
+
 # ─────────────────────────────────────
 # 路由
 # ─────────────────────────────────────
@@ -692,17 +759,23 @@ def force_refresh_races():
 @login_required
 def race_detail(race_id):
     try:
-        config = load_config()  # 🔥 用 config
+        config = load_config()
         
-        # 🔥 自動用 config date/course
-        races_real, horses_real, trainers_real = load_real_data(
-            racedate=config.get("default_date", "2026/05/13"),
-            racecourse=config.get("default_course", "HV"),
-            raceno=race_id,
-            use_real=True,
+        # 🔥 1. 優先用 DB
+        races_db, horses_db, trainers_db = load_race_horses_from_db(
+            race_id, config["default_date"], config["default_course"]
         )
-
-        if races_real and races_real[0]:  # 🔥 確保有資料
+        
+        # 🔥 2. 如果 DB 冇，抓即時
+        if not races_db:
+            races_real, horses_real, trainers_real = load_real_data(
+                config["default_date"], config["default_course"], race_id, use_real=True
+            )
+        else:
+            races_real, horses_real, trainers_real = races_db, horses_db, trainers_db
+        
+        # 🔥 3. 統一處理資料
+        if races_real and races_real[0]:
             race = races_real[0]
             race_horses = []
             for h_id, h in horses_real.items():
@@ -712,19 +785,20 @@ def race_detail(race_id):
                 race_horses.append(hh)
             race_trainers = list(trainers_real.values())
         else:
-            # Fallback
+            # 🔥 4. 最終 fallback
             race, fallback_horses, fallback_trainers = make_dummy_race(race_id)
             race_horses, race_trainers, summary, active_detail = build_race_detail(
                 race, fallback_horses, fallback_trainers
             )
+            race = race  # 確保 race 存在
 
-        # 🔥 建 summary + active_detail
+        # 🔥 5. 建 summary + active_detail
         summary = {
             "race_no": race.get("id", race_id),
             "title": race.get("title", f"第 {race_id} 場"),
             "class": race.get("class", ""),
-            "course": config.get("default_course", "ST"),  # 🔥 config
-            "date": config.get("default_date", "2026/05/17"),  # 🔥 config
+            "course": config.get("default_course", "ST"),
+            "date": config.get("default_date", "2026/05/17"),
             "time": race.get("time", ""),
             "distance": race.get("distance", ""),
             "horse_count": len(race_horses),
@@ -743,15 +817,15 @@ def race_detail(race_id):
             ]
         }
 
-        logger.info(f"✅ R{race_id} 載入：{config.get('default_date')} {config.get('default_course')}")
+        logger.info(f"✅ R{race_id} 成功：{len(race_horses)}匹馬 {config.get('default_date')} {config.get('default_course')}")
 
         return render_template(
             "race.html",
             race=race,
-            race_horses=race_horses,
+            race_horses = pad_race_horses(race_horses, 14),
             race_trainers=race_trainers,
             summary=summary,
-            config=config,  # 🔥 傳 config
+            config=config,
             active_detail=active_detail,
             topbar_links=TOPBAR_LINKS,
             race_buttons=get_race_buttons(),
@@ -759,8 +833,27 @@ def race_detail(race_id):
         )
 
     except Exception as e:
-        logger.exception(f"race_detail R{race_id} 失敗")
-        return f"<h1>❌ R{race_id} 載入失敗</h1><p>{str(e)}</p><a href='/'>← 首頁</a>", 500
+        logger.exception(f"❌ R{race_id} 失敗")
+        return f"<h1>❌ R{race_id} 載入失敗</h1><p>{str(e)}</p><a href='/'>首頁</a>", 500
+
+@app.route("/debug-db")
+@login_required
+def debug_db():
+    try:
+        import sqlite3
+        conn = sqlite3.connect(db.DB_PATH)
+        count = pd.read_sql_query("SELECT COUNT(*) as cnt FROM current_horses", conn).iloc[0]['cnt']
+        sample = pd.read_sql_query("SELECT * FROM current_horses LIMIT 3", conn).to_dict('records')
+        conn.close()
+        return f"""
+        ✅ DB 狀態：<br>
+        總馬匹：{count}<br>
+        樣本：{sample}
+        """
+    except Exception as e:
+        return f"❌ DB 錯誤：{e}"
+
+
 
 
 @app.route("/standards")
@@ -771,6 +864,7 @@ def standards():
     return render_template(
         "standards.html",
         standards=standards,
+        race_buttons=get_race_buttons(),
         update_time=now.strftime("%Y-%m-%d %H:%M")
     )
 
@@ -895,6 +989,7 @@ def open_browser():
         left_panel=None,
         right_panel=None,
         browser_url=proxy_url,
+        race_buttons=get_race_buttons()
     )
 
 def fetch_standard_times():
@@ -923,7 +1018,7 @@ def fetch_standard_times():
 
 @app.errorhandler(404)
 def page_not_found(e):
-    return render_template("404.html", topbar_links=TOPBAR_LINKS), 404
+    return render_template("404.html", race_buttons=get_race_buttons(), topbar_links=TOPBAR_LINKS), 404
 
 
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -1042,65 +1137,38 @@ from urllib.parse import urlparse
 def api_horse_detail():
     try:
         url = request.args.get("url", "").strip()
-        if not url:
-            return jsonify({"ok": False, "error": "missing url"}), 400
+        if not url or "racing.hkjc.com" not in url:
+            return jsonify({"ok": False, "error": "invalid url"}), 400
 
-        parsed = urlparse(url)
-        if "racing.hkjc.com" not in parsed.netloc:
-            return jsonify({"ok": False, "error": "invalid hkjc url"}), 400
-
-        resp = requests.get(
-            url,
-            timeout=20,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept-Language": "zh-HK,zh;q=0.9,en;q=0.8",
-            },
-        )
+        resp = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
         resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
 
-        html = resp.text
-        soup = BeautifulSoup(html, "html.parser")
-        page_title = _clean_text(soup.title.get_text()) if soup.title else "Horse detail"
-
-        text = _extract_rows_from_page(html)
-        lines = [line.strip() for line in text.splitlines() if line.strip()]
-
-        summary_lines = []
-        start_idx = None
-        for i, line in enumerate(lines):
-            if "馬匹近三季往績紀錄" in line:
-                start_idx = i
-                break
-
-        if start_idx is not None:
-            summary_lines.append(lines[start_idx])
-            for line in lines[start_idx + 1:]:
-                if "備註:" in line or "免責聲明:" in line:
-                    break
-                summary_lines.append(line)
+        # 🔥 只抓「馬匹近三季往績紀錄」以下摘要
+        summary_div = soup.find("div", string=re.compile("馬匹近三季往績紀錄"))
+        if summary_div:
+            summary_text = summary_div.find_next_sibling("div").get_text("\n", strip=True)[:2000]
         else:
-            summary_lines = lines[:120]
+            # fallback：只取主要內容
+            main_content = soup.find("div", class_="racecard-main") or soup.find("main")
+            summary_text = main_content.get_text("\n", strip=True)[:1500] if main_content else "無摘要"
 
         return jsonify({
             "ok": True,
             "url": url,
-            "title": page_title,
-            "summary": "\n".join(summary_lines[:120]).strip(),
+            "title": soup.title.get_text(strip=True) if soup.title else "馬匹資料",
+            "summary": summary_text.replace("\n\n", "\n").strip()[:800] + "..."  # 🔥 限800字
         })
 
-    except requests.exceptions.RequestException as e:
-        return jsonify({"ok": False, "error": f"HTTP error: {str(e)}"}), 500
     except Exception as e:
-        logger.exception("api_horse_detail failed")
-        return jsonify({"ok": False, "error": f"Unexpected error: {str(e)}"}), 500
+        return jsonify({"ok": False, "error": str(e)}), 500
     
 
 @app.route("/calculator")
 @login_required
 def calculator():
     """投注計算器"""
-    return render_template("calculator.html", topbar_links=TOPBAR_LINKS)
+    return render_template("calculator.html", race_buttons=get_race_buttons(), topbar_links=TOPBAR_LINKS)
 
 
 

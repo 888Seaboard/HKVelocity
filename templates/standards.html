@@ -8,7 +8,7 @@
         <span>⏱️ HKJC 跑道標準時間表</span>
         <a href="{{ url_for('refresh_standards') }}" class="btn-link btn-refresh">🔄 刷新</a>
     </div>
-    
+
     <div class="panel-section">
         <span class="update-info">🕒 {{ update_time or '即時載入' }} | {{ standards|length }} 組途程</span>
     </div>
@@ -27,17 +27,17 @@
                 </tr>
             </thead>
             <tbody>
-             {% for dist_key, times in standards.items() %}
-             <tr {% if '1200' in dist_key %}class="highlight"{% endif %}>
-             <td><strong>{{ dist_key }}</strong></td>
-               <td>{{ times['1'] or '-' }}</td>  <!-- 🔥 改呢行 -->
-               <td>{{ times['2'] or '-' }}</td>  <!-- 🔥 改呢行 -->
-               <td>{{ times['3'] or '-' }}</td>  <!-- 🔥 改呢行 -->
-               <td>{{ times['4'] or '-' }}</td>  <!-- 🔥 改呢行 -->
-               <td>{{ times['5'] or '-' }}</td>  <!-- 🔥 改呢行 -->
-             </tr>
-             {% endfor %}
-</tbody>
+                {% for dist_key, times in standards.items() %}
+                <tr {% if '1200' in dist_key %}class="highlight" {% endif %}>
+                    <td><strong>{{ dist_key }}</strong></td>
+                    <td>{{ times['1'] or '-' }}</td> <!-- 🔥 改呢行 -->
+                    <td>{{ times['2'] or '-' }}</td> <!-- 🔥 改呢行 -->
+                    <td>{{ times['3'] or '-' }}</td> <!-- 🔥 改呢行 -->
+                    <td>{{ times['4'] or '-' }}</td> <!-- 🔥 改呢行 -->
+                    <td>{{ times['5'] or '-' }}</td> <!-- 🔥 改呢行 -->
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
 
@@ -81,52 +81,74 @@
 </div>
 
 <script>
-let standardsData = {{ standards|tojson }};
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('actual-time').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') calculatePace();
+    let standardsData = {{ standards| tojson }};
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('actual-time').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') calculatePace();
+        });
     });
-});
 
-function calculatePace() {
-    const dist = parseInt(document.getElementById('dist-select').value);
-    const cls = document.getElementById('class-select').value;
-    const actualTime = document.getElementById('actual-time').value.trim();
-    
-    const classMap = {"class1": "1", "class2": "2", "class3": "3", "class4": "4", "class5": "5"};
-    const stdTime = standardsData[dist_key]?.[classMap[cls]];
-    
-    const rating = computePaceRating(stdTime, actualTime);
-    const status = rating > 0 ? '🟢 快於標準' : '🔴 慢於標準';
-    
-    document.getElementById('pace-result').innerHTML = `
+    function calculatePace() {
+        const dist = parseInt(document.getElementById('dist-select').value);
+        const cls = document.getElementById('class-select').value;
+        const actualTime = document.getElementById('actual-time').value.trim();
+
+        const classMap = { "class1": "1", "class2": "2", "class3": "3", "class4": "4", "class5": "5" };
+        const stdTime = standardsData[dist_key]?.[classMap[cls]];
+
+        const rating = computePaceRating(stdTime, actualTime);
+        const status = rating > 0 ? '🟢 快於標準' : '🔴 慢於標準';
+
+        document.getElementById('pace-result').innerHTML = `
         <div><span>步速評分：</span><div>${rating.toFixed(1)} 點</div></div>
         <div><span>標準 vs 實際：</span><div>${stdTime} vs ${actualTime}</div></div>
         <div><span>狀態：</span><div>${status} ${Math.abs(rating).toFixed(1)} 點</div></div>
     `;
-    document.getElementById('pace-result').className = rating > 0 ? 'detail-row good' : 'detail-row bad';
-}
+        document.getElementById('pace-result').className = rating > 0 ? 'detail-row good' : 'detail-row bad';
+    }
 
-function computePaceRating(stdTimeStr, actualTimeStr) {
-    const stdSeconds = timeToSeconds(stdTimeStr);
-    const actualSeconds = timeToSeconds(actualTimeStr);
-    return (stdSeconds - actualSeconds) * 100;
-}
+    function computePaceRating(stdTimeStr, actualTimeStr) {
+        const stdSeconds = timeToSeconds(stdTimeStr);
+        const actualSeconds = timeToSeconds(actualTimeStr);
+        return (stdSeconds - actualSeconds) * 100;
+    }
 
-function timeToSeconds(timeStr) {
-    const parts = timeStr.match(/(\d+):(\d+)\.(\d+)/) || [0,0,0,0];
-    return parseInt(parts[1]) * 60 + parseInt(parts[2]) + parseInt(parts[3]) / 10;
-}
+    function timeToSeconds(timeStr) {
+        const parts = timeStr.match(/(\d+):(\d+)\.(\d+)/) || [0, 0, 0, 0];
+        return parseInt(parts[1]) * 60 + parseInt(parts[2]) + parseInt(parts[3]) / 10;
+    }
 </script>
 
 <style>
-/* 🔥 最小 CSS，只修視覺問題 */
-.standards-container { max-width: 100%; }
-.update-info { color: var(--muted); font-size: 13px; }
-.standards-table th { background: rgba(212, 175, 55, 0.12) !important; }
-.standards-table .highlight td { background: rgba(212, 175, 55, 0.08) !important; }
-.result-box.good { border-color: var(--success) !important; }
-.result-box.bad { border-color: var(--danger) !important; }
-.btn-refresh { padding: 4px 12px !important; font-size: 12px !important; }
+    /* 🔥 最小 CSS，只修視覺問題 */
+    .standards-container {
+        max-width: 100%;
+    }
+
+    .update-info {
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .standards-table th {
+        background: rgba(212, 175, 55, 0.12) !important;
+    }
+
+    .standards-table .highlight td {
+        background: rgba(212, 175, 55, 0.08) !important;
+    }
+
+    .result-box.good {
+        border-color: var(--success) !important;
+    }
+
+    .result-box.bad {
+        border-color: var(--danger) !important;
+    }
+
+    .btn-refresh {
+        padding: 4px 12px !important;
+        font-size: 12px !important;
+    }
 </style>
 {% endblock %}
