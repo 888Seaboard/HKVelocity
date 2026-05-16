@@ -294,7 +294,7 @@ a:hover {
 
 .quad-grid {
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
+    grid-template-columns: 2.2fr 1fr;
     grid-template-rows: 1fr 1fr;
     gap: 10px;
 }
@@ -305,7 +305,7 @@ a:hover {
 }
 
 .table-wrap {
-    overflow: auto;
+    overflow-x: auto;
     min-height: 0;
     border-radius: 12px;
     border: 1px solid rgba(42, 50, 66, 0.95);
@@ -317,9 +317,10 @@ a:hover {
 .race-table,
 .list-table,
 .combo-results-table {
-    width: 100%;
+    width: max-content;  /* 固定寬度，確保內容不會爆框 */
     border-collapse: collapse;
-    table-layout: fixed;
+    table-layout: auto;
+    min-width: 100%;  /* 確保表格至少佔滿容器寬度 */
 }
 
 .table-base th,
@@ -344,6 +345,8 @@ a:hover {
     color: #d8deea;
     font-size: 14px;
     font-weight: 700;
+    white-space: nowrap;
+    width: auto !important;  /* 自動分配空間 */
 }
 
 .table-base tr:hover td,

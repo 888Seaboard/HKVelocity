@@ -283,56 +283,115 @@ def parse_racecard_page(html, racedate="2026/05/13", racecourse="HV", raceno=Non
     parsed_horses = {}
     parsed_trainers = {}
 
+    def cell_text(cols, idx):
+        if idx < 0 or idx >= len(cols):
+            return ""
+        return cols[idx].get_text(" ", strip=True)
+
+    def cell_img_src(cols, idx):
+        if idx < 0 or idx >= len(cols):
+            return ""
+        img = cols[idx].find("img")
+        if img and img.get("src"):
+            src = img["src"].strip()
+            if src.startswith("//"):
+                return "https:" + src
+            if src.startswith("/"):
+                return "https://racing.hkjc.com" + src
+            return src
+        return ""
+
     table = soup.find("table", class_="starter")
     if table:
-        tbody = table.find("tbody")
-        if tbody:
-            rows = tbody.find_all("tr")
-            horse_id = 1
+        tbody = table.find("tbody") or table
+        rows = tbody.find_all("tr")
+        horse_id = 1
 
-            for row in rows:
-                cols = row.find_all("td")
-                if len(cols) < 15:
-                    continue
+        for row in rows:
+            cols = row.find_all("td")
+            if not cols:
+                continue
 
-                horse_no = cols[0].get_text(strip=True)
-                form = cols[1].get_text(strip=True)
-                silk_img = cols[2].img["src"] if cols[2].find("img") else ""
-                horse_name = cols[3].get_text(strip=True)
-                weight = cols[5].get_text(strip=True)
-                jockey = cols[6].get_text(strip=True)
-                draw = cols[8].get_text(strip=True)
-                trainer = cols[9].get_text(strip=True)
-                rating_no = cols[11].get_text(strip=True)
-                rating_change = cols[12].get_text(strip=True)
-                body_weight = cols[13].get_text(strip=True)
-                gear = cols[-1].get_text(strip=True)
+            headers = [th.get_text(" ", strip=True) for th in row.find_all("th")]
+            if headers:
+                continue
 
-                trainer_id = slugify_trainer(trainer)
-                horse = {
-                    "id": horse_id,
-                    "no": horse_no,
-                    "name": horse_name,
-                    "silk": silk_img,
-                    "weight": weight,
-                    "jockey": jockey,
-                    "draw": draw,
-                    "trainer": trainer,
-                    "trainer_id": trainer_id,
-                    "rating": rating_no,
-                    "rating_change": rating_change,
-                    "body_weight": body_weight,
-                    "form": form,
-                    "gear": gear,
-                    "official_link": "",
-                }
-                parsed_horses[horse_id] = horse
+            header_row = None
+            break
 
-                if trainer_id not in parsed_trainers:
-                    parsed_trainers[trainer_id] = {"name": trainer, "horses": []}
-                parsed_trainers[trainer_id]["horses"].append(horse_id)
-                races[0]["horses"].append(horse_id)
-                horse_id += 1
+        header_row = table.find("tr")
+        header_cells = header_row.find_all(["th", "td"]) if header_row else []
+        headers = [h.get_text(" ", strip=True) for h in header_cells]
+        header_map = {h: i for i, h in enumerate(headers)}
+
+        for row in rows:
+            cols = row.find_all("td")
+            if not cols:
+                continue
+
+            horse_no = cell_text(cols, header_map.get("馬匹編號", 0))
+            form = cell_text(cols, header_map.get("6次近績", 1))
+            silk_img = cell_img_src(cols, header_map.get("綵衣", 2))
+            horse_name = cell_text(cols, header_map.get("馬名", 3))
+            weight = cell_text(cols, header_map.get("負磅", 5))
+            jockey = cell_text(cols, header_map.get("騎師", 6))
+            draw = cell_text(cols, header_map.get("檔位", 8))
+            trainer = cell_text(cols, header_map.get("練馬師", 9))
+            rating_no = cell_text(cols, header_map.get("評分", 11))
+            rating_change = cell_text(cols, header_map.get("評分+/-", 12))
+            body_weight = cell_text(cols, header_map.get("排位體重", 13))
+            body_weight_change = cell_text(cols, header_map.get("排位體重+/-", 14))
+            best_time = cell_text(cols, header_map.get("最佳時間", 15))
+            age = cell_text(cols, header_map.get("馬齡", 16))
+            sex = cell_text(cols, header_map.get("性別", 17))
+            stakes = cell_text(cols, header_map.get("今季獎金", 18))
+            priority = cell_text(cols, header_map.get("優先參賽次序", 19))
+            days_since_run = cell_text(cols, header_map.get("上賽距今日期", 20))
+            gear = cell_text(cols, header_map.get("配備", 21))
+            owner = cell_text(cols, header_map.get("馬主", 22))
+            sire = cell_text(cols, header_map.get("父系", 23))
+            dam = cell_text(cols, header_map.get("母系", 24))
+            import_type = cell_text(cols, header_map.get("進口類別", 25))
+            possible_overweight = cell_text(cols, header_map.get("可能超磅", 7))
+
+            trainer_id = slugify_trainer(trainer)
+
+            horse = {
+                "id": horse_id,
+                "no": horse_no,
+                "form": form,
+                "silk": silk_img,
+                "name": horse_name,
+                "weight": weight,
+                "jockey": jockey,
+                "possible_overweight": possible_overweight,
+                "draw": draw,
+                "trainer": trainer,
+                "trainer_id": trainer_id,
+                "rating": rating_no,
+                "rating_change": rating_change,
+                "body_weight": body_weight,
+                "body_weight_change": body_weight_change,
+                "best_time": best_time,
+                "age": age,
+                "sex": sex,
+                "stakes": stakes,
+                "priority": priority,
+                "days_since_run": days_since_run,
+                "gear": gear,
+                "owner": owner,
+                "sire": sire,
+                "dam": dam,
+                "import_type": import_type,
+                "official_link": "",
+            }
+
+            parsed_horses[horse_id] = horse
+            if trainer_id not in parsed_trainers:
+                parsed_trainers[trainer_id] = {"name": trainer, "horses": []}
+            parsed_trainers[trainer_id]["horses"].append(horse_id)
+            races[0]["horses"].append(horse_id)
+            horse_id += 1
 
     return races, parsed_horses, parsed_trainers
 

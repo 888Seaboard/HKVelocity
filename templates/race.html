@@ -16,37 +16,54 @@
                             <th>檔位</th>
                             <th>負磅</th>
                             <th>評分</th>
+                            <th>排位體重</th>
+                            <th>最佳時間</th>
+                            <th>馬齡</th>
+                            <th>今季獎金</th>
+                            <th>上賽距今日期</th>
                             <th>近績</th>
                             <th>配備</th>
+                            <th>馬主</th>
+                            <th>父系</th>
+                            <th>母系</th>
+                            <th>進口類別</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if race_horses %}
-                            {% for horse in race_horses %}
-                            <tr>
-                                <td class="wrap">
-                                    <a href="#"
-                                       onclick="loadHorseInTopbar('{{ horse.official_link or "" }}', '{{ horse.name|e }}', '{{ horse.trainer|e }}'); return false;"
-                                       style="color: var(--gold-bright); font-weight: 600; text-decoration: none;"
-                                       title="查看 {{ horse.name }} 詳情（{{ horse.trainer }}）">
-                                        {{ horse.name }} 🐎
-                                    </a>
-                                </td>
-                                <td class="wrap">{{ horse.jockey or '-' }}</td>
-                                <td class="wrap">
-                                    <a href="{{ url_for('trainer_detail', trainer_id=horse.trainer_id) }}">{{ horse.trainer }}</a>
-                                </td>
-                                <td>{{ horse.draw }}</td>
-                                <td>{{ horse.weight }}</td>
-                                <td>{{ horse.rating }}</td>
-                                <td class="wrap">{{ horse.form }}</td>
-                                <td>{{ horse.gear or '-' }}</td>  <!-- 🔥 新增配備列 -->
-                            </tr>
-                            {% endfor %}
+                        {% for horse in race_horses %}
+                        <tr>
+                            <td class="wrap">
+                                <a href="#"
+                                    onclick="loadHorseInTopbar('{{ horse.official_link or "" }}', '{{ horse.name|e }}', '{{ horse.trainer|e }}'); return false;"
+                                    style="color: var(--gold-bright); font-weight: 600; text-decoration: none;"
+                                    title="查看 {{ horse.name }} 詳情（{{ horse.trainer }}）">
+                                    {{ horse.name }} 🐎
+                                </a>
+                            </td>
+                            <td class="wrap">{{ horse.jockey or '-' }}</td>
+                            <td class="wrap">{{ horse.trainer or '-' }}</td>
+                            <td>{{ horse.draw or '-' }}</td>
+                            <td>{{ horse.weight or '-' }}</td>
+                            <td>{{ horse.rating or '-' }}</td>
+                            <td>{{ horse.body_weight or '-' }}</td>
+                            <td>{{ horse.best_time or '-' }}</td>
+                            <td>{{ horse.age or '-' }}</td>
+                            <td>{{ horse.stakes or '-' }}</td>
+                            <td>{{ horse.days_since_run or '-' }}</td>
+                            <td class="wrap">{{ horse.form or '-' }}</td>
+                            <td>{{ horse.gear or '-' }}</td>
+                            <td class="wrap">{{ horse.owner or '-' }}</td>
+                            <td class="wrap">{{ horse.sire or '-' }}</td>
+                            <td class="wrap">{{ horse.dam or '-' }}</td>
+                            <td>{{ horse.import_type or '-' }}</td>
+                        </tr>
+                        </tr>
+                        {% endfor %}
                         {% else %}
-                            <tr>
-                                <td colspan="8" class="detail-empty">No race horses available.</td>
-                            </tr>
+                        <tr>
+                            <td colspan="8" class="detail-empty">No race horses available.</td>
+                        </tr>
                         {% endif %}
                     </tbody>
                 </table>
@@ -59,7 +76,8 @@
                 <div id="topbar-horse-info" style="padding:20px; color:#666;">
                     點擊排位表馬名查看詳情
                 </div>
-                <div id="topbar-horse-summary" style="padding:20px; white-space:pre-wrap; color:#ddd; display:none;"></div>
+                <div id="topbar-horse-summary" style="padding:20px; white-space:pre-wrap; color:#ddd; display:none;">
+                </div>
             </div>
         </section>
 
@@ -74,14 +92,14 @@
             {% else %}
             <div class="detail-list">
                 {% if active_detail and active_detail["rows"] %}
-                    {% for label, value in active_detail["rows"] %}
-                    <div class="detail-row">
-                        <span>{{ label }}</span>
-                        <div>{{ value }}</div>
-                    </div>
-                    {% endfor %}
+                {% for label, value in active_detail["rows"] %}
+                <div class="detail-row">
+                    <span>{{ label }}</span>
+                    <div>{{ value }}</div>
+                </div>
+                {% endfor %}
                 {% else %}
-                    <div class="detail-empty">Select a race button or click Open.</div>
+                <div class="detail-empty">Select a race button or click Open.</div>
                 {% endif %}
             </div>
             {% endif %}
@@ -101,48 +119,48 @@
 </div>
 
 <script>
-async function loadHorseInTopbar(horse_link, horse_name, trainer) {
-    console.log('horse_link =', horse_link, 'horse_name =', horse_name, 'trainer =', trainer);
+    async function loadHorseInTopbar(horse_link, horse_name, trainer) {
+        console.log('horse_link =', horse_link, 'horse_name =', horse_name, 'trainer =', trainer);
 
-    if (!horse_link) {
-        alert('horse_link is EMPTY');
-        return;
-    }
+        if (!horse_link) {
+            alert('horse_link is EMPTY');
+            return;
+        }
 
-    const titleEl = document.getElementById('horse-detail-title');
-    const metaEl = document.getElementById('horse-detail-meta');
-    const bodyEl = document.getElementById('horse-detail-body');
-    const infoEl = document.getElementById('topbar-horse-info');
-    const summaryEl = document.getElementById('topbar-horse-summary');
+        const titleEl = document.getElementById('horse-detail-title');
+        const metaEl = document.getElementById('horse-detail-meta');
+        const bodyEl = document.getElementById('horse-detail-body');
+        const infoEl = document.getElementById('topbar-horse-info');
+        const summaryEl = document.getElementById('topbar-horse-summary');
 
-    titleEl.textContent = `🐎 ${horse_name}`;
-    metaEl.textContent = `來源: ${horse_link} | 練馬師: ${trainer || '-'}`;
-    bodyEl.textContent = '載入中...';
+        titleEl.textContent = `🐎 ${horse_name}`;
+        metaEl.textContent = `來源: ${horse_link} | 練馬師: ${trainer || '-'}`;
+        bodyEl.textContent = '載入中...';
 
-    infoEl.style.display = 'none';
-    summaryEl.style.display = 'block';
-    summaryEl.textContent = '載入中...';
+        infoEl.style.display = 'none';
+        summaryEl.style.display = 'block';
+        summaryEl.textContent = '載入中...';
 
-    try {
-        const res = await fetch(`/api/horse-detail?url=${encodeURIComponent(horse_link)}`);
-        const data = await res.json();
+        try {
+            const res = await fetch(`/api/horse-detail?url=${encodeURIComponent(horse_link)}`);
+            const data = await res.json();
 
-        if (data.ok) {
-            const text = data.summary || '無摘要';
-            bodyEl.textContent = text;
-            summaryEl.textContent = text;
-        } else {
-            const errText = data.error || '載入失敗';
+            if (data.ok) {
+                const text = data.summary || '無摘要';
+                bodyEl.textContent = text;
+                summaryEl.textContent = text;
+            } else {
+                const errText = data.error || '載入失敗';
+                bodyEl.textContent = errText;
+                summaryEl.textContent = errText;
+            }
+        } catch (err) {
+            const errText = '載入失敗：' + err.message;
             bodyEl.textContent = errText;
             summaryEl.textContent = errText;
         }
-    } catch (err) {
-        const errText = '載入失敗：' + err.message;
-        bodyEl.textContent = errText;
-        summaryEl.textContent = errText;
-    }
 
-    document.getElementById('quad-topbar-detail').scrollIntoView({ behavior: 'smooth' });
-}
+        document.getElementById('quad-topbar-detail').scrollIntoView({ behavior: 'smooth' });
+    }
 </script>
 {% endblock %}
